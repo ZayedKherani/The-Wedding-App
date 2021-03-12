@@ -1,2 +1,2 @@
 # The-Weddingy-Appyyyyy
-A wedding management app written in flutter with additional platform specific code.
+A weddingy managementy appy writty in flutter wit addi platform specificcy codeyyyy.
