@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "The-Weddingy-Appyyyyy",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--verbose"
+            ],
+        }
+    ]
+}
