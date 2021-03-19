@@ -5,10 +5,65 @@ class EventData {
   // int eventId;
   // List<Admin> admins;
   // List<Guest> guests;
+  List<WeddingEvent> subEvents;
 
-  EventData(int number, String name, DateTime dateTime) {
-    this.eventNumber = number;
-    this.eventName = name;
+  EventData({
+    int eventNumber,
+    String eventName,
+    DateTime eventDateTime,
+    List<WeddingEvent> subEvents,
+  }) {
+    this.eventNumber = eventNumber;
+    this.eventName = eventName;
+    this.eventDateTime = eventDateTime;
+    this.subEvents = (subEvents == null) ? [] : subEvents;
+  }
+
+  void setEventDateTime(DateTime dateTime) {
     this.eventDateTime = dateTime;
   }
+
+  void addSubEvent(WeddingEvent event) {
+    subEvents.add(event);
+  }
+
+  void removeSubEventByIndex(int index) {
+    subEvents.removeAt(index);
+  }
+
+  Map<String, dynamic> toMap() => {
+        'eventNumber': eventNumber,
+        'eventName': eventName,
+        'eventDateTime': eventDateTime.toString(),
+      };
+
+  factory EventData.fromMap(Map<String, dynamic> map) => EventData(
+        eventNumber: map['eventNumber'],
+        eventName: map['eventName'],
+        eventDateTime: DateTime.parse(map['eventDateTime']),
+      );
+}
+
+class WeddingEvent {
+  int eventNumber;
+  String eventName;
+  DateTime eventDateTime;
+
+  WeddingEvent({int eventNumber, String eventName, DateTime eventDateTime}) {
+    this.eventNumber = eventNumber;
+    this.eventName = eventName;
+    this.eventDateTime = eventDateTime;
+  }
+
+  Map<String, dynamic> toMap() => {
+        'eventNumber': eventNumber,
+        'eventName': eventName,
+        'eventDateTime': eventDateTime.toString(),
+      };
+
+  factory WeddingEvent.fromMap(Map<String, dynamic> map) => WeddingEvent(
+        eventNumber: map['eventNumber'],
+        eventName: map['eventName'],
+        eventDateTime: DateTime.parse(map['eventDateTime']),
+      );
 }

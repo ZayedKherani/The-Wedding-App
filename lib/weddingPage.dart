@@ -4,36 +4,22 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
-import 'ThemeData.dart';
+import 'eventPage.dart';
 import 'eventData.dart';
-import 'weddingPage.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      darkTheme: darkTheme,
-      title: 'The Wedding App',
-      theme: lightTheme,
-      home: MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({
+class WeddingHome extends StatefulWidget {
+  WeddingHome({
     Key key,
+    this.currentWeddingData,
   }) : super(key: key);
 
+  final EventData currentWeddingData;
+
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _WeddingHomeState createState() => _WeddingHomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _WeddingHomeState extends State<WeddingHome> {
   TextEditingController _createEventController = TextEditingController();
   String eventNameText, eventName;
 
@@ -41,25 +27,68 @@ class _MyHomePageState extends State<MyHomePage> {
 
   DateTime selectedDate = DateTime.now();
 
-  List<EventData> eventData = [];
-
   void _addToList(String eventName) {
     setState(() {
       int eventNumber;
 
-      if (eventData.isEmpty) {
+      if (widget.currentWeddingData.subEvents.isEmpty) {
         eventNumber = 1;
       } else {
-        eventNumber = eventData.last.eventNumber + 1;
+        eventNumber = widget.currentWeddingData.subEvents.last.eventNumber + 1;
       }
 
-      EventData currentEventData = EventData(
-          eventNumber: eventNumber,
-          eventName: eventName,
-          eventDateTime: selectedDate);
+      WeddingEvent currentWeddingEventData = WeddingEvent(
+        eventNumber: eventNumber,
+        eventName: eventName,
+        eventDateTime: selectedDate,
+      );
 
-      eventData.add(currentEventData);
+      widget.currentWeddingData.addSubEvent(currentWeddingEventData);
     });
+  }
+
+  _readEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    int loopLength = prefs.getInt(
+        "numberOfEvents${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}");
+
+    if (loopLength != widget.currentWeddingData.subEvents.length) {
+      for (int i = 0; i < loopLength; i++) {
+        String jsonCurrentEventDataToRead = prefs.getString(
+                "${i.toString()}${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}}") ??
+            null;
+
+        if (jsonCurrentEventDataToRead != null) {
+          Map<String, dynamic> currentEventDataToRead =
+              jsonDecode(jsonCurrentEventDataToRead);
+          WeddingEvent currentEventData =
+              WeddingEvent.fromMap(currentEventDataToRead);
+
+          setState(() {
+            widget.currentWeddingData.addSubEvent(currentEventData);
+          });
+        }
+      }
+    }
+  }
+
+  _saveEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    for (int i = 0; i < widget.currentWeddingData.subEvents.length; i++) {
+      Map<String, dynamic> currentEventDataToSave =
+          widget.currentWeddingData.subEvents[i].toMap();
+      String jsonCurrentEventDataToSave = jsonEncode(currentEventDataToSave);
+
+      prefs.setString(
+          "${i.toString()}${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}",
+          jsonCurrentEventDataToSave);
+    }
+
+    prefs.setInt(
+        "numberOfEvents${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}",
+        widget.currentWeddingData.subEvents.length);
   }
 
   _selectDate(BuildContext context) async {
@@ -216,39 +245,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  _readEvents() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    int loopLength = prefs.getInt("numberOfEvents") ?? 0;
-
-    for (int i = 0; i < loopLength; i++) {
-      String jsonCurrentEventDataToRead = prefs.getString(i.toString()) ?? null;
-
-      if (jsonCurrentEventDataToRead != null) {
-        Map<String, dynamic> currentEventDataToRead =
-            jsonDecode(jsonCurrentEventDataToRead);
-        EventData currentEventData = EventData.fromMap(currentEventDataToRead);
-
-        setState(() {
-          eventData.add(currentEventData);
-        });
-      }
-    }
-  }
-
-  _saveEvents() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    for (int i = 0; i < eventData.length; i++) {
-      Map<String, dynamic> currentEventDataToSave = eventData[i].toMap();
-      String jsonCurrentEventDataToSave = jsonEncode(currentEventDataToSave);
-
-      prefs.setString(i.toString(), jsonCurrentEventDataToSave);
-    }
-
-    prefs.setInt("numberOfEvents", eventData.length);
-  }
-
   @override
   void initState() {
     _readEvents();
@@ -266,7 +262,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text("Weddings"),
+        title: Text("Events"),
       ),
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -274,19 +270,21 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisExtent: _screenHeight / 8,
           childAspectRatio: 3 / 2,
         ),
-        itemCount: eventData.length,
+        itemCount: widget.currentWeddingData.subEvents.length,
         itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.fromLTRB(15, 7.5, 15, 7.5),
             child: OpenContainer(
               closedBuilder: (context, animation) {
                 return ListTile(
-                  title: Text(eventData[index].eventName),
+                  title: Text(
+                      widget.currentWeddingData.subEvents[index].eventName),
                 );
               },
               openBuilder: (context, animation) {
-                return WeddingHome(
-                  currentWeddingData: eventData[index],
+                return EventHome(
+                  currentWeddingEventData:
+                      widget.currentWeddingData.subEvents[index],
                 );
               },
               closedShape: RoundedRectangleBorder(
@@ -302,6 +300,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await createEvent(context);
+
           await _saveEvents();
         },
         tooltip: 'Increment',
