@@ -1,5 +1,5 @@
 name: the_weddingy_appyyyyy
-description: A new Flutter project.
+description: A wedding management app
 
 publish_to: 'none'
 
@@ -14,7 +14,7 @@ dependencies:
 
   cupertino_icons: ^1.0.2
   animations:
-  shared_preferences:
+  shared_preferences: ^2.0.5
 
 dev_dependencies:
   flutter_test:

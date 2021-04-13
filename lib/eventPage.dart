@@ -31,6 +31,7 @@ class _EventHomeState extends State<EventHome> {
       body: Center(
         child: Text("${_screenWidth}x$_screenHeight"),
       ),
+      
     );
   }
 }

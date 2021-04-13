@@ -4,9 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
-import 'ThemeData.dart';
-import 'eventData.dart';
 import 'weddingPage.dart';
+import 'eventData.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,9 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      darkTheme: darkTheme,
       title: 'The Wedding App',
-      theme: lightTheme,
       home: MyHomePage(),
     );
   }
@@ -35,6 +32,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController _createEventController = TextEditingController();
+
   String eventNameText, eventName;
 
   double _screenWidth, _screenHeight;
@@ -62,73 +60,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  _selectDate(BuildContext context) async {
-    final ThemeData theme = Theme.of(context);
-    assert(theme.platform != null);
-    switch (theme.platform) {
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        return buildMaterialDatePicker(context);
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        return buildCupertinoDatePicker(context);
-    }
-  }
-
-  buildMaterialDatePicker(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(
-          DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      lastDate: DateTime(
-          DateTime.now().year + 5, DateTime.now().month, DateTime.now().day),
-      initialDatePickerMode: DatePickerMode.year,
-      helpText: 'Select Event Date',
-      errorFormatText: 'Enter Valid Date',
-      errorInvalidText: 'Enter Date in Valid Range',
-      fieldLabelText: 'Event Date',
-      fieldHintText: 'Month/Date/Year',
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light(),
-          child: child,
-        );
-      },
-    );
-    if (picked != null && picked != selectedDate)
-      setState(() {
-        selectedDate = picked;
-      });
-  }
-
-  buildCupertinoDatePicker(BuildContext context) {
-    showModalBottomSheet(
-        context: context,
-        builder: (BuildContext builder) {
-          return Container(
-            height: MediaQuery.of(context).copyWith().size.height / 3,
-            color: Colors.white,
-            child: CupertinoDatePicker(
-              mode: CupertinoDatePickerMode.date,
-              onDateTimeChanged: (picked) {
-                if (picked != null && picked != selectedDate)
-                  setState(() {
-                    selectedDate = picked;
-                  });
-              },
-              initialDateTime: selectedDate,
-              minimumDate: DateTime(DateTime.now().year, DateTime.now().month,
-                  DateTime.now().day),
-              maximumDate: DateTime(DateTime.now().year + 5,
-                  DateTime.now().month, DateTime.now().day),
-            ),
-          );
-        });
-  }
-
   Future<void> createEvent(BuildContext context) async {
     return showDialog(
       context: context,
@@ -137,41 +68,21 @@ class _MyHomePageState extends State<MyHomePage> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text("Create A New Event"),
-          content: Column(
-            children: [
-              TextField(
-                onChanged: (value) {
-                  setState(() {
-                    eventNameText = value;
-                  });
-                },
-                controller: _createEventController,
-                decoration: InputDecoration(
-                  hintText: "Event Name",
+          content: TextField(
+            onChanged: (value) {
+              setState(() {
+                eventNameText = value;
+              });
+            },
+            controller: _createEventController,
+            decoration: InputDecoration(
+              border: new OutlineInputBorder(
+                borderRadius: const BorderRadius.all(
+                  const Radius.circular(10.0),
                 ),
               ),
-              SizedBox(
-                height: 20,
-              ),
-              Text("${selectedDate.toLocal()}".split(" ")[0]),
-              SizedBox(
-                height: 20,
-              ),
-              TextButton(
-                // onPressed: () => _selectDate(context),
-                onPressed: () => _selectDate(context),
-                child: Text('  Select Date  '),
-                style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  backgroundColor:
-                      MaterialStateProperty.all<Color>(Colors.grey[400]),
-                ),
-              ),
-            ],
+              hintText: "Event Name",
+            ),
           ),
           actions: [
             TextButton(
@@ -307,6 +218,15 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
+      // body: WeddingHome(
+      //   currentWeddingData: EventData(
+      //     eventDateTime: DateTime.now().add(
+      //       Duration(days: 5),
+      //     ),
+      //     eventName: "Cono",
+      //     eventNumber: 1,
+      //   ),
+      // ),
     );
   }
 }
