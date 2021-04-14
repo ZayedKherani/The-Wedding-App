@@ -19,8 +19,8 @@ class WeddingHome extends StatefulWidget {
 }
 
 class _WeddingHomeState extends State<WeddingHome> {
-  TextEditingController _createEventController = TextEditingController();
-  TextEditingController _dateTimeController = TextEditingController();
+  TextEditingController _createEventController,
+      _dateTimeController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
   Duration initialtimer = new Duration();
@@ -29,12 +29,26 @@ class _WeddingHomeState extends State<WeddingHome> {
 
   String eventNameText, eventName;
 
-  double posx = 100.0;
-  double posy = 100.0;
+  Duration timeLeftToEvent;
+
+  double posx, posy;
 
   int selectedEventy = 0;
 
-  Duration timeLeftToEvent;
+  List<String> months = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC"
+  ];
 
   void _addToList(String eventName) {
     setState(() {
@@ -190,7 +204,7 @@ class _WeddingHomeState extends State<WeddingHome> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text("Create A New Event"),
           content: Container(
-            height: _screenHeight / 6,
+            height: _screenHeight / 5,
             child: Column(
               children: [
                 TextField(
@@ -389,6 +403,31 @@ class _WeddingHomeState extends State<WeddingHome> {
     );
   }
 
+  String generateTimeLeftString() {
+    int seconds = timeLeftToEvent.inSeconds;
+
+    int days = seconds ~/ Duration.secondsPerDay;
+    seconds -= days * Duration.secondsPerDay;
+
+    int hours = seconds ~/ Duration.secondsPerHour;
+    seconds -= hours * Duration.secondsPerHour;
+
+    int minutes = seconds ~/ Duration.secondsPerMinute;
+    seconds -= minutes * Duration.secondsPerMinute;
+
+    final List<String> timeLeft = [];
+
+    if (days != 0) timeLeft.add('${days}d');
+
+    if (timeLeft.isNotEmpty || hours != 0) timeLeft.add('${hours}h');
+
+    if (timeLeft.isNotEmpty || minutes != 0) timeLeft.add('${minutes}m');
+
+    timeLeft.add('${seconds}s');
+
+    return timeLeft.join(' ').replaceAll("-", "");
+  }
+
   @override
   void initState() {
     _readEvents();
@@ -405,7 +444,7 @@ class _WeddingHomeState extends State<WeddingHome> {
       _screenHeight = MediaQuery.of(context).size.height;
     });
 
-    calculateTimeToEvent();
+    if (widget.currentWeddingData.subEvents.isNotEmpty) calculateTimeToEvent();
 
     return GestureDetector(
       onTapDown: (details) => onTapDown(context, details),
@@ -476,11 +515,43 @@ class _WeddingHomeState extends State<WeddingHome> {
             ),
             Card(
               child: Container(
+                padding: EdgeInsets.all(_screenHeight / 136.2),
                 width: _screenWidth,
-                child: Column(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Time Left To Event"),
-                    Text(timeLeftToEvent.inSeconds.toString()),
+                    Text(
+                      generateTimeLeftString() +
+                          ((timeLeftToEvent.inMilliseconds < 0)
+                              ? " Left To Event"
+                              : " Passed Since Event"),
+                    ),
+                    SizedBox(
+                      width: _screenWidth / 63.2,
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      radius: 40,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(months[widget
+                                  .currentWeddingData
+                                  .subEvents[selectedEventy]
+                                  .eventDateTime
+                                  .month -
+                              1]),
+                          Text(widget.currentWeddingData
+                              .subEvents[selectedEventy].eventDateTime.day
+                              .toString()),
+                          Text(widget.currentWeddingData
+                              .subEvents[selectedEventy].eventDateTime.year
+                              .toString()),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

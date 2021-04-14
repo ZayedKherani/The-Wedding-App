@@ -8,6 +8,7 @@ import 'weddingPage.dart';
 import 'eventData.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
