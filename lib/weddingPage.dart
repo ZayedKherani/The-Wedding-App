@@ -2,164 +2,302 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:async';
 
-import 'eventData.dart';
+import 'package:the_weddingy_appyyyyy/eventData.dart';
 
-class WeddingHome extends StatefulWidget {
-  WeddingHome({
-    Key key,
-    this.currentWeddingData,
-  }) : super(key: key);
+TextEditingController dateTimeController = TextEditingController(text: "");
+DateTime selectedDate = DateTime.now().add(Duration(hours: 2));
+String eventNameText, eventName;
+EventData currentWeddingData;
+MediaQueryData deviceInfo;
 
-  final EventData currentWeddingData;
+_readEvents() async {
+  final prefs = await SharedPreferences.getInstance();
 
-  @override
-  _WeddingHomeState createState() => _WeddingHomeState();
+  int loopLength = (prefs.getInt(
+              "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}") ==
+          null)
+      ? 0
+      : prefs.getInt(
+          "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}");
+
+  if (loopLength != currentWeddingData.subEvents.length) {
+    for (int i = 0; i < loopLength; i++) {
+      String jsonCurrentEventDataToRead = prefs.getString(
+              "${i.toString()}${currentWeddingData.eventName}${currentWeddingData.eventNumber}") ??
+          null;
+
+      if (jsonCurrentEventDataToRead != null) {
+        Map<String, dynamic> currentEventDataToRead =
+            jsonDecode(jsonCurrentEventDataToRead);
+        WeddingEvent currentEventData =
+            WeddingEvent.fromMap(currentEventDataToRead);
+
+        currentWeddingData.addSubEvent(currentEventData);
+      }
+    }
+  }
 }
 
-class _WeddingHomeState extends State<WeddingHome> {
-  TextEditingController _createEventController,
-      _dateTimeController = TextEditingController();
+_saveEvents() async {
+  final prefs = await SharedPreferences.getInstance();
 
-  DateTime selectedDate = DateTime.now();
-  Duration initialtimer = new Duration();
+  for (int i = 0; i < currentWeddingData.subEvents.length; i++) {
+    Map<String, dynamic> currentEventDataToSave =
+        currentWeddingData.subEvents[i].toMap();
+    String jsonCurrentEventDataToSave = jsonEncode(currentEventDataToSave);
 
-  double _screenWidth, _screenHeight;
-
-  String eventNameText, eventName;
-
-  Duration timeLeftToEvent;
-
-  double posx, posy;
-
-  int selectedEventy = 0;
-
-  List<String> months = [
-    "JAN",
-    "FEB",
-    "MAR",
-    "APR",
-    "MAY",
-    "JUN",
-    "JUL",
-    "AUG",
-    "SEP",
-    "OCT",
-    "NOV",
-    "DEC"
-  ];
-
-  void _addToList(String eventName) {
-    setState(() {
-      int eventNumber;
-
-      if (widget.currentWeddingData.subEvents.isEmpty) {
-        eventNumber = 1;
-      } else {
-        eventNumber = widget.currentWeddingData.subEvents.last.eventNumber + 1;
-      }
-
-      WeddingEvent currentWeddingEventData = WeddingEvent(
-        eventNumber: eventNumber,
-        eventName: eventName,
-        eventDateTime: selectedDate,
-      );
-
-      widget.currentWeddingData.addSubEvent(currentWeddingEventData);
-    });
+    prefs.setString(
+        "${currentWeddingData.subEvents[i].eventNumber}${currentWeddingData.eventName}${currentWeddingData.eventNumber}",
+        jsonCurrentEventDataToSave);
   }
 
-  _readEvents() async {
-    final prefs = await SharedPreferences.getInstance();
+  prefs.setInt(
+      "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}",
+      currentWeddingData.subEvents.length);
+}
 
-    int loopLength = (prefs.getInt(
-                "numberOfEvents${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}") ==
-            null)
-        ? 0
-        : prefs.getInt(
-            "numberOfEvents${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}");
+void addToList(String eventName) {
+  int eventNumber;
 
-    if (loopLength != this.widget.currentWeddingData.subEvents.length) {
-      for (int i = 0; i < loopLength; i++) {
-        String jsonCurrentEventDataToRead = prefs.getString(
-                "${i.toString()}${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}") ??
-            null;
-
-        if (jsonCurrentEventDataToRead != null) {
-          Map<String, dynamic> currentEventDataToRead =
-              jsonDecode(jsonCurrentEventDataToRead);
-          WeddingEvent currentEventData =
-              WeddingEvent.fromMap(currentEventDataToRead);
-
-          setState(() {
-            widget.currentWeddingData.addSubEvent(currentEventData);
-          });
-        }
-      }
-    }
+  if (currentWeddingData.subEvents.isEmpty) {
+    eventNumber = 1;
+  } else {
+    eventNumber = currentWeddingData.subEvents.last.eventNumber + 1;
   }
 
-  _saveEvents() async {
-    final prefs = await SharedPreferences.getInstance();
+  WeddingEvent currentWeddingEventData = WeddingEvent(
+    eventNumber: eventNumber,
+    eventName: eventName,
+    eventDateTime: selectedDate,
+  );
 
-    for (int i = 0; i < widget.currentWeddingData.subEvents.length; i++) {
-      Map<String, dynamic> currentEventDataToSave =
-          widget.currentWeddingData.subEvents[i].toMap();
-      String jsonCurrentEventDataToSave = jsonEncode(currentEventDataToSave);
+  currentWeddingData.addSubEvent(currentWeddingEventData);
+}
 
-      prefs.setString(
-          "${i.toString()}${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}",
-          jsonCurrentEventDataToSave);
-    }
+class CupertinoWeddingPage extends StatefulWidget {
+  const CupertinoWeddingPage({Key key, this.currentEventDataToSave})
+      : super(key: key);
 
-    prefs.setInt(
-        "numberOfEvents${widget.currentWeddingData.eventName}${widget.currentWeddingData.eventNumber}",
-        widget.currentWeddingData.subEvents.length);
-  }
+  final EventData currentEventDataToSave;
 
-  _selectDate(BuildContext context) async {
-    final ThemeData theme = Theme.of(context);
-    assert(theme.platform != null);
-    switch (theme.platform) {
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        return buildMaterialDateTimePicker(context);
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        return buildCupertinoDateTimePicker(context);
-    }
-  }
+  @override
+  _CupertinoWeddingPageState createState() => _CupertinoWeddingPageState();
+}
 
-  buildCupertinoDateTimePicker(BuildContext context) {
-    showModalBottomSheet(
+class _CupertinoWeddingPageState extends State<CupertinoWeddingPage> {
+  Future<void> createEvent(BuildContext context) async {
+    showCupertinoDialog(
       context: context,
-      builder: (BuildContext builder) {
-        return Container(
-          height: MediaQuery.of(context).copyWith().size.height / 3,
-          color: Colors.white,
-          child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.dateAndTime,
-            onDateTimeChanged: (picked) {
-              if (picked != null && picked != selectedDate)
-                setState(() {
-                  selectedDate = picked;
-                  _dateTimeController.text =
-                      selectedDate.toString().substring(0, 16);
-                });
-            },
-            initialDateTime: selectedDate,
-            minimumDate: DateTime.now(),
-            maximumDate: DateTime.now().add(Duration(days: 365 * 5)),
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text("Create A New Event"),
+          content: Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: Column(
+              children: [
+                CupertinoTextField(
+                  placeholder: "Event Name",
+                  onChanged: (value) {
+                    setState(() {
+                      eventNameText = value;
+                    });
+                  },
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                CupertinoTextField(
+                  controller: dateTimeController,
+                  readOnly: true,
+                  onTap: () {
+                    showCupertinoModalPopup(
+                      context: context,
+                      builder: (context) {
+                        return Container(
+                          height: deviceInfo.size.height / 3,
+                          color:
+                              (deviceInfo.platformBrightness == Brightness.dark)
+                                  ? Colors.white
+                                  : Colors.black,
+                          child: CupertinoDatePicker(
+                            backgroundColor: (deviceInfo.platformBrightness ==
+                                    Brightness.dark)
+                                ? Colors.black
+                                : Colors.white,
+                            mode: CupertinoDatePickerMode.dateAndTime,
+                            initialDateTime: selectedDate,
+                            minimumDate: DateTime.now().add(Duration(hours: 1)),
+                            maximumDate:
+                                DateTime.now().add(Duration(days: 365 * 5)),
+                            onDateTimeChanged: (picked) {
+                              if (picked != null && picked != selectedDate) {
+                                setState(() {
+                                  selectedDate = picked;
+                                  dateTimeController.text =
+                                      selectedDate.toString().substring(0, 16);
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
+          actions: [
+            CupertinoDialogAction(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            CupertinoDialogAction(
+              child: Text("Create"),
+              onPressed: () {
+                setState(() {
+                  eventName = eventNameText;
+                });
+                Navigator.pop(context);
+                addToList(eventName);
+                _saveEvents();
+              },
+            ),
+          ],
         );
       },
     );
   }
 
-  buildMaterialDateTimePicker(BuildContext context) async {
+  Future<bool> delateAlort(BuildContext context, int index) async {
+    return await showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text("Delete Event?"),
+          content: Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: Text(
+                "The Event \"${currentWeddingData.subEvents[index].eventName}\" will be removed from your Wedding."),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              child: Text("Cancel"),
+              isDefaultAction: true,
+              isDestructiveAction: false,
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+            ),
+            CupertinoDialogAction(
+              child: Text("Delete"),
+              isDefaultAction: false,
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void initState() {
+    setState(() {
+      currentWeddingData = widget.currentEventDataToSave;
+
+      _readEvents();
+    });
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    setState(() {
+      deviceInfo = MediaQuery.of(context);
+    });
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(currentWeddingData.eventName),
+        trailing: CupertinoButton(
+          child: Icon(
+            CupertinoIcons.add,
+          ),
+          onPressed: () async {
+            await createEvent(context);
+
+            await _saveEvents();
+          },
+        ),
+      ),
+      child: ListView.builder(
+        itemCount: currentWeddingData.subEvents.length,
+        itemBuilder: (context, index) {
+          return CupertinoContextMenu(
+            child: Card(
+              child: Text(currentWeddingData.subEvents[index].eventName),
+              color: (deviceInfo.platformBrightness == Brightness.dark)
+                  ? Colors.black
+                  : Colors.white,
+            ),
+            actions: [
+              CupertinoContextMenuAction(
+                child: Text(
+                  "Cancel",
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                isDestructiveAction: false,
+                isDefaultAction: true,
+              ),
+              CupertinoContextMenuAction(
+                child: Text(
+                  "Delete",
+                ),
+                isDefaultAction: false,
+                isDestructiveAction: true,
+                trailingIcon: CupertinoIcons.delete,
+                onPressed: () async {
+                  Navigator.pop(context);
+
+                  bool shouldDelate = await delateAlort(context, index);
+
+                  if (shouldDelate) {
+                    setState(() {
+                      currentWeddingData.removeSubEventByIndex(index);
+                    });
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class MaterialWeddingPage extends StatefulWidget {
+  const MaterialWeddingPage({Key key, this.currentEventDataToSave})
+      : super(key: key);
+
+  final EventData currentEventDataToSave;
+
+  @override
+  _MaterialWeddingPageState createState() => _MaterialWeddingPageState();
+}
+
+class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
+  double posx, posy;
+
+  buildDateTimePicker(BuildContext context) async {
     final DateTime picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
@@ -190,7 +328,7 @@ class _WeddingHomeState extends State<WeddingHome> {
           changedTimer.hour,
           changedTimer.minute,
         );
-        _dateTimeController.text = selectedDate.toString().substring(0, 16);
+        dateTimeController.text = selectedDate.toString().substring(0, 16);
       });
     }
   }
@@ -204,8 +342,8 @@ class _WeddingHomeState extends State<WeddingHome> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text("Create A New Event"),
           content: Container(
-            height: _screenHeight / 5,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   onChanged: (value) {
@@ -213,7 +351,6 @@ class _WeddingHomeState extends State<WeddingHome> {
                       eventNameText = value;
                     });
                   },
-                  controller: _createEventController,
                   decoration: InputDecoration(
                     border: new OutlineInputBorder(
                       borderRadius: const BorderRadius.all(
@@ -226,36 +363,29 @@ class _WeddingHomeState extends State<WeddingHome> {
                 SizedBox(
                   height: 10,
                 ),
-                InkWell(
-                  onTap: () {
-                    _selectDate(context);
-                  },
-                  child: Container(
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: Colors.grey[200]),
-                    child: TextFormField(
-                      textAlign: TextAlign.center,
-                      enabled: false,
-                      controller: _dateTimeController,
-                      decoration: InputDecoration(
-                        border: new OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(
-                            const Radius.circular(10.0),
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.only(top: 0.0),
+                TextFormField(
+                  textAlign: TextAlign.center,
+                  readOnly: true,
+                  controller: dateTimeController,
+                  decoration: InputDecoration(
+                    border: new OutlineInputBorder(
+                      borderRadius: const BorderRadius.all(
+                        const Radius.circular(10.0),
                       ),
                     ),
+                    contentPadding: EdgeInsets.only(top: 0.0),
                   ),
+                  onTap: () {
+                    buildDateTimePicker(context);
+                  },
                 ),
               ],
             ),
           ),
           actions: [
             TextButton(
-              child: Text("  CANCEL  "),
+              child: Text("Cancel"),
               onPressed: () {
-                _createEventController.clear();
                 Navigator.pop(context);
               },
               style: ButtonStyle(
@@ -269,14 +399,13 @@ class _WeddingHomeState extends State<WeddingHome> {
               ),
             ),
             TextButton(
-              child: Text("OK"),
+              child: Text("Create"),
               onPressed: () {
                 setState(() {
                   eventName = eventNameText;
                 });
-                _createEventController.clear();
                 Navigator.pop(context);
-                _addToList(eventName);
+                addToList(eventName);
               },
               style: ButtonStyle(
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -294,25 +423,39 @@ class _WeddingHomeState extends State<WeddingHome> {
     );
   }
 
-  void _removeCurrentIndexFromList(int index) async {
-    await showDialog(
+  Future<bool> delateAlort(BuildContext context, int index) async {
+    return await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Delete Event"),
-          content: Text(
-              "Are you sure you want to delete \"${widget.currentWeddingData.subEvents[index].eventName}\"?"),
+          title: Text("Delete Event?"),
+          content: Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: Text(
+                "The Event \"${currentWeddingData.subEvents[index].eventName}\" will be removed from your Wedding."),
+          ),
           actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              style: ButtonStyle(
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.grey),
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              ),
+            ),
             TextButton(
               child: Text("Delete"),
               onPressed: () {
-                setState(() {
-                  widget.currentWeddingData.removeSubEventByIndex(index);
-                  _saveEvents();
-                });
-                Navigator.pop(context);
+                Navigator.pop(context, true);
               },
               style: ButtonStyle(
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -322,22 +465,6 @@ class _WeddingHomeState extends State<WeddingHome> {
                 ),
                 backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-              ),
-            ),
-            TextButton(
-              autofocus: true,
-              child: Text("Cancel"),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ButtonStyle(
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
               ),
             ),
           ],
@@ -355,84 +482,13 @@ class _WeddingHomeState extends State<WeddingHome> {
     });
   }
 
-  void calculateDefaultSelectedEventy() async {
-    DateTime currentTime = DateTime.now();
-
-    for (int i = 0; i < widget.currentWeddingData.subEvents.length; i++) {
-      if (currentTime
-              .compareTo(widget.currentWeddingData.subEvents[i].eventDateTime) <
-          0) {
-        continue;
-      } else if (currentTime.compareTo(
-              widget.currentWeddingData.subEvents[i].eventDateTime) >=
-          0) {
-        selectedEventy = i;
-        break;
-      }
-    }
-  }
-
-  Color calculateCardColor(int index) {
-    if (index == selectedEventy) {
-      return Colors.blue;
-    } else if (index < selectedEventy || index > selectedEventy) {
-      return Colors.white;
-    } else {
-      return Colors.red;
-    }
-  }
-
-  void calculateTimeToEvent() {
-    setState(() {
-      timeLeftToEvent = DateTime.now().difference(
-          widget.currentWeddingData.subEvents[selectedEventy].eventDateTime);
-    });
-
-    Timer.periodic(
-      Duration(seconds: 1),
-      (Timer timer) {
-        if (timeLeftToEvent.compareTo(Duration(seconds: 0)) == 0) {
-          timer.cancel();
-        } else {
-          setState(() {
-            timeLeftToEvent = DateTime.now().difference(widget
-                .currentWeddingData.subEvents[selectedEventy].eventDateTime);
-          });
-        }
-      },
-    );
-  }
-
-  String generateTimeLeftString() {
-    int seconds = timeLeftToEvent.inSeconds;
-
-    int days = seconds ~/ Duration.secondsPerDay;
-    seconds -= days * Duration.secondsPerDay;
-
-    int hours = seconds ~/ Duration.secondsPerHour;
-    seconds -= hours * Duration.secondsPerHour;
-
-    int minutes = seconds ~/ Duration.secondsPerMinute;
-    seconds -= minutes * Duration.secondsPerMinute;
-
-    final List<String> timeLeft = [];
-
-    if (days != 0) timeLeft.add('${days}d');
-
-    if (timeLeft.isNotEmpty || hours != 0) timeLeft.add('${hours}h');
-
-    if (timeLeft.isNotEmpty || minutes != 0) timeLeft.add('${minutes}m');
-
-    timeLeft.add('${seconds}s');
-
-    return timeLeft.join(' ').replaceAll("-", "");
-  }
-
   @override
   void initState() {
-    _readEvents();
+    setState(() {
+      currentWeddingData = widget.currentEventDataToSave;
 
-    calculateDefaultSelectedEventy();
+      _readEvents();
+    });
 
     super.initState();
   }
@@ -440,133 +496,60 @@ class _WeddingHomeState extends State<WeddingHome> {
   @override
   Widget build(BuildContext context) {
     setState(() {
-      _screenWidth = MediaQuery.of(context).size.width;
-      _screenHeight = MediaQuery.of(context).size.height;
+      deviceInfo = MediaQuery.of(context);
     });
 
-    if (widget.currentWeddingData.subEvents.isNotEmpty) calculateTimeToEvent();
-
-    return GestureDetector(
-      onTapDown: (details) => onTapDown(context, details),
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text("Events"),
-        ),
-        body: Column(
-          children: [
-            Container(
-              height: 100,
-              child: GridView.builder(
-                scrollDirection: Axis.horizontal,
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: _screenWidth,
-                  mainAxisExtent: _screenHeight / 8,
-                  crossAxisSpacing: 0,
-                ),
-                itemCount: widget.currentWeddingData.subEvents.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.fromLTRB(0, 7.5, 0, 7.5),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedEventy = index;
-                        });
-                      },
-                      onLongPress: () async {
-                        showMenu(
-                          context: context,
-                          position:
-                              RelativeRect.fromLTRB(posx, posy, posx, posy),
-                          items: <PopupMenuEntry>[
-                            PopupMenuItem(
-                              value: 0,
-                              child: Text("Delete"),
-                            ),
-                          ],
-                        ).then((value) => {
-                              if (value == 0)
-                                {_removeCurrentIndexFromList(index)}
-                            });
-                      },
-                      child: Card(
-                        child: ListTile(
-                          tileColor: calculateCardColor(index),
-                          title: Text(widget
-                              .currentWeddingData.subEvents[index].eventName),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(0),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Card(
-              child: ListTile(
-                title: Text(
-                  widget.currentWeddingData.subEvents[selectedEventy].eventName,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-            Card(
-              child: Container(
-                padding: EdgeInsets.all(_screenHeight / 136.2),
-                width: _screenWidth,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      generateTimeLeftString() +
-                          ((timeLeftToEvent.inMilliseconds < 0)
-                              ? " Left To Event"
-                              : " Passed Since Event"),
-                    ),
-                    SizedBox(
-                      width: _screenWidth / 63.2,
-                    ),
-                    CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 40,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(months[widget
-                                  .currentWeddingData
-                                  .subEvents[selectedEventy]
-                                  .eventDateTime
-                                  .month -
-                              1]),
-                          Text(widget.currentWeddingData
-                              .subEvents[selectedEventy].eventDateTime.day
-                              .toString()),
-                          Text(widget.currentWeddingData
-                              .subEvents[selectedEventy].eventDateTime.year
-                              .toString()),
-                        ],
-                      ),
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(currentWeddingData.eventName),
+      ),
+      body: GestureDetector(
+        onTapDown: (details) => onTapDown(context, details),
+        child: ListView.builder(
+          itemCount: currentWeddingData.subEvents.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onLongPress: () {
+                showMenu(
+                  context: context,
+                  position: RelativeRect.fromLTRB(posx, posy, posx, posy),
+                  items: <PopupMenuEntry>[
+                    PopupMenuItem(
+                      value: 0,
+                      child: Text("Delete"),
                     ),
                   ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            await createEvent(context);
+                ).then(
+                  (value) async {
+                    if (value == 0) {
+                      bool shouldDelate = await delateAlort(context, index);
 
-            await _saveEvents();
+                      if (shouldDelate != null && shouldDelate) {
+                        setState(() {
+                          currentWeddingData.removeSubEventByIndex(index);
+                        });
+                      }
+                    }
+                  },
+                );
+              },
+              child: Card(
+                child: Text(currentWeddingData.subEvents[index].eventName),
+              ),
+            );
           },
-          tooltip: 'Increment',
-          child: Icon(Icons.add),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(
+          Icons.add,
+        ),
+        onPressed: () async {
+          await createEvent(context);
+
+          await _saveEvents();
+        },
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 class EventData {
   int eventNumber;
   String eventName;
@@ -27,7 +29,14 @@ class EventData {
     subEvents.add(event);
   }
 
-  void removeSubEventByIndex(int index) {
+  void removeSubEventByIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    prefs.remove("${subEvents[index].eventNumber}$eventName$eventNumber");
+
+    prefs.setInt("numberOfEvents$eventName$eventNumber",
+        prefs.getInt("numberOfEvents$eventName$eventNumber") - 1);
+
     subEvents.removeAt(index);
   }
 
