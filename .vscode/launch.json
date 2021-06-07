@@ -8,6 +8,7 @@
             "args": [
                 "--verbose"
             ],
+            "console": "terminal",
         }
     ]
 }

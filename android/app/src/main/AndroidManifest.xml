@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.Zayed.TheWeddingApp.the_weddingy_appyyyyy">
    <application
-        android:label="the_weddingy_appyyyyy"
+        android:label="The Wedding App"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

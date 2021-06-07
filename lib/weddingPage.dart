@@ -3,11 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
-import 'package:the_weddingy_appyyyyy/eventData.dart';
+import 'eventData.dart';
+import 'main.dart';
 
 TextEditingController dateTimeController = TextEditingController(text: "");
+String eventNameText, eventName, eventDescriptionText, eventDescription;
 DateTime selectedDate = DateTime.now().add(Duration(hours: 2));
-String eventNameText, eventName;
 EventData currentWeddingData;
 MediaQueryData deviceInfo;
 
@@ -21,19 +22,31 @@ _readEvents() async {
       : prefs.getInt(
           "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}");
 
-  if (loopLength != currentWeddingData.subEvents.length) {
-    for (int i = 0; i < loopLength; i++) {
-      String jsonCurrentEventDataToRead = prefs.getString(
-              "${i.toString()}${currentWeddingData.eventName}${currentWeddingData.eventNumber}") ??
-          null;
+  String subEventIDsStrins = prefs.getString(
+      "subEventIDs${currentWeddingData.eventName}${currentWeddingData.eventNumber}");
 
-      if (jsonCurrentEventDataToRead != null) {
-        Map<String, dynamic> currentEventDataToRead =
-            jsonDecode(jsonCurrentEventDataToRead);
-        WeddingEvent currentEventData =
-            WeddingEvent.fromMap(currentEventDataToRead);
+  if (subEventIDsStrins != null && subEventIDsStrins != "[]") {
+    currentWeddingData.subEventIDs = [];
 
-        currentWeddingData.addSubEvent(currentEventData);
+    var map = json.decode(subEventIDsStrins);
+
+    for (int i = 0; i < map.length; i++)
+      currentWeddingData.subEventIDs.add(map[i]);
+
+    if (loopLength != currentWeddingData.subEvents.length) {
+      for (int i = 0; i < loopLength; i++) {
+        String jsonCurrentEventDataToRead = prefs.getString(
+                "${currentWeddingData.subEventIDs[i]}${currentWeddingData.eventName}${currentWeddingData.eventNumber}") ??
+            null;
+
+        if (jsonCurrentEventDataToRead != null) {
+          Map<String, dynamic> currentEventDataToRead =
+              jsonDecode(jsonCurrentEventDataToRead);
+          WeddingEvent currentEventData =
+              WeddingEvent.fromMap(currentEventDataToRead);
+
+          currentWeddingData.addSubEvent(currentEventData);
+        }
       }
     }
   }
@@ -57,7 +70,7 @@ _saveEvents() async {
       currentWeddingData.subEvents.length);
 }
 
-void addToList(String eventName) {
+void addToList(String eventName, String eventDescription) {
   int eventNumber;
 
   if (currentWeddingData.subEvents.isEmpty) {
@@ -67,13 +80,28 @@ void addToList(String eventName) {
   }
 
   WeddingEvent currentWeddingEventData = WeddingEvent(
-    eventNumber: eventNumber,
-    eventName: eventName,
-    eventDateTime: selectedDate,
-  );
+      eventNumber: eventNumber,
+      eventName: eventName,
+      eventDateTime: selectedDate,
+      eventDescription: eventDescription);
 
   currentWeddingData.addSubEvent(currentWeddingEventData);
 }
+
+List<String> monthsAbr = [
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC"
+];
 
 class CupertinoWeddingPage extends StatefulWidget {
   const CupertinoWeddingPage({Key key, this.currentEventDataToSave})
@@ -108,6 +136,17 @@ class _CupertinoWeddingPageState extends State<CupertinoWeddingPage> {
                   height: 10,
                 ),
                 CupertinoTextField(
+                  placeholder: "Event Description",
+                  onChanged: (value) {
+                    setState(() {
+                      eventDescriptionText = value;
+                    });
+                  },
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                CupertinoTextField(
                   controller: dateTimeController,
                   readOnly: true,
                   onTap: () {
@@ -116,15 +155,15 @@ class _CupertinoWeddingPageState extends State<CupertinoWeddingPage> {
                       builder: (context) {
                         return Container(
                           height: deviceInfo.size.height / 3,
-                          color:
-                              (deviceInfo.platformBrightness == Brightness.dark)
-                                  ? Colors.white
-                                  : Colors.black,
+                          // color:
+                          //     (deviceInfo.platformBrightness == Brightness.dark)
+                          //         ? Colors.white
+                          //         : Colors.black,
                           child: CupertinoDatePicker(
-                            backgroundColor: (deviceInfo.platformBrightness ==
-                                    Brightness.dark)
-                                ? Colors.black
-                                : Colors.white,
+                            backgroundColor: CupertinoDynamicColor.resolve(
+                              CupertinoColors.secondarySystemGroupedBackground,
+                              context,
+                            ),
                             mode: CupertinoDatePickerMode.dateAndTime,
                             initialDateTime: selectedDate,
                             minimumDate: DateTime.now().add(Duration(hours: 1)),
@@ -160,9 +199,13 @@ class _CupertinoWeddingPageState extends State<CupertinoWeddingPage> {
               onPressed: () {
                 setState(() {
                   eventName = eventNameText;
+                  eventDescription = eventDescriptionText;
                 });
                 Navigator.pop(context);
-                addToList(eventName);
+                addToList(
+                  eventName,
+                  eventDescription,
+                );
                 _saveEvents();
               },
             ),
@@ -222,65 +265,139 @@ class _CupertinoWeddingPageState extends State<CupertinoWeddingPage> {
     setState(() {
       deviceInfo = MediaQuery.of(context);
     });
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(currentWeddingData.eventName),
-        trailing: CupertinoButton(
-          child: Icon(
-            CupertinoIcons.add,
-          ),
-          onPressed: () async {
-            await createEvent(context);
 
-            await _saveEvents();
-          },
+    return CupertinoPageScaffold(
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            CupertinoSliverNavigationBar(
+              largeTitle: Text(
+                currentWeddingData.eventName,
+              ),
+              trailing: CupertinoButton(
+                child: Icon(
+                  CupertinoIcons.add,
+                ),
+                onPressed: () async {
+                  await createEvent(context);
+
+                  await _saveEvents();
+                },
+              ),
+            ),
+          ];
+        },
+        body: CupertinoScrollbar(
+          child: ListView.builder(
+            itemCount: currentWeddingData.subEvents.length,
+            itemBuilder: (context, index) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CupertinoContextMenu(
+                    child: EventCard(
+                      index: index,
+                    ),
+                    actions: [
+                      CupertinoContextMenuAction(
+                        child: Text(
+                          "Cancel",
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        isDestructiveAction: false,
+                        isDefaultAction: true,
+                      ),
+                      CupertinoContextMenuAction(
+                        child: Text(
+                          "Delete",
+                        ),
+                        isDefaultAction: false,
+                        isDestructiveAction: true,
+                        trailingIcon: CupertinoIcons.delete,
+                        onPressed: () async {
+                          Navigator.pop(context);
+
+                          bool shouldDelate = await delateAlort(context, index);
+
+                          if (shouldDelate != null && shouldDelate) {
+                            setState(() {
+                              currentWeddingData.removeSubEventByIndex(index);
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  if (index + 1 != currentWeddingData.subEvents.length)
+                    Divider(height: 2),
+                ],
+              );
+            },
+          ),
         ),
       ),
-      child: ListView.builder(
-        itemCount: currentWeddingData.subEvents.length,
-        itemBuilder: (context, index) {
-          return CupertinoContextMenu(
-            child: Card(
-              child: Text(currentWeddingData.subEvents[index].eventName),
-              color: (deviceInfo.platformBrightness == Brightness.dark)
-                  ? Colors.black
-                  : Colors.white,
-            ),
-            actions: [
-              CupertinoContextMenuAction(
-                child: Text(
-                  "Cancel",
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                isDestructiveAction: false,
-                isDefaultAction: true,
-              ),
-              CupertinoContextMenuAction(
-                child: Text(
-                  "Delete",
-                ),
-                isDefaultAction: false,
-                isDestructiveAction: true,
-                trailingIcon: CupertinoIcons.delete,
-                onPressed: () async {
-                  Navigator.pop(context);
-
-                  bool shouldDelate = await delateAlort(context, index);
-
-                  if (shouldDelate) {
-                    setState(() {
-                      currentWeddingData.removeSubEventByIndex(index);
-                    });
-                  }
-                },
-              ),
-            ],
-          );
-        },
-      ),
     );
+
+    // return CupertinoPageScaffold(
+    //   navigationBar: CupertinoNavigationBar(
+    //     middle: Text(currentWeddingData.eventName),
+    //     trailing: CupertinoButton(
+    //       child: Icon(
+    //         CupertinoIcons.add,
+    //       ),
+    //       onPressed: () async {
+    //         await createEvent(context);
+
+    //         await _saveEvents();
+    //       },
+    //     ),
+    //   ),
+    //   child: CupertinoScrollbar(
+    //     child: ListView.builder(
+    //       itemCount: currentWeddingData.subEvents.length,
+    //       itemBuilder: (context, index) {
+    //         return CupertinoContextMenu(
+    //           child: EventCard(
+    //             index: index,
+    //           ),
+    //           actions: [
+    //             CupertinoContextMenuAction(
+    //               child: Text(
+    //                 "Cancel",
+    //               ),
+    //               onPressed: () {
+    //                 Navigator.pop(context);
+    //               },
+    //               isDestructiveAction: false,
+    //               isDefaultAction: true,
+    //             ),
+    //             CupertinoContextMenuAction(
+    //               child: Text(
+    //                 "Delete",
+    //               ),
+    //               isDefaultAction: false,
+    //               isDestructiveAction: true,
+    //               trailingIcon: CupertinoIcons.delete,
+    //               onPressed: () async {
+    //                 Navigator.pop(context);
+
+    //                 bool shouldDelate = await delateAlort(context, index);
+
+    //                 if (shouldDelate != null && shouldDelate) {
+    //                   setState(() {
+    //                     currentWeddingData.removeSubEventByIndex(index);
+    //                   });
+    //                 }
+    //               },
+    //             ),
+    //           ],
+    //         );
+    //       },
+    //     ),
+    //   ),
+    // );
   }
 }
 
@@ -363,6 +480,24 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                 SizedBox(
                   height: 10,
                 ),
+                TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      eventDescriptionText = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    border: new OutlineInputBorder(
+                      borderRadius: const BorderRadius.all(
+                        const Radius.circular(10.0),
+                      ),
+                    ),
+                    hintText: "Event Description",
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
                 TextFormField(
                   textAlign: TextAlign.center,
                   readOnly: true,
@@ -403,9 +538,13 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
               onPressed: () {
                 setState(() {
                   eventName = eventNameText;
+                  eventDescription = eventDescriptionText;
                 });
                 Navigator.pop(context);
-                addToList(eventName);
+                addToList(
+                  eventName,
+                  eventDescription,
+                );
               },
               style: ButtonStyle(
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -476,10 +615,33 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
   void onTapDown(BuildContext context, TapDownDetails details) {
     final RenderBox box = context.findRenderObject();
     final Offset localOffset = box.globalToLocal(details.globalPosition);
+
     setState(() {
       posx = localOffset.dx;
       posy = localOffset.dy;
     });
+  }
+
+  Color generateCardColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.white;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.grey[850];
+    else
+      return (deviceInfo.platformBrightness == Brightness.dark)
+          ? Colors.grey[850]
+          : Colors.white;
+  }
+
+  Color generateCardShadowColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.black;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.white;
+    else
+      return (deviceInfo.platformBrightness == Brightness.dark)
+          ? Colors.white
+          : Colors.black;
   }
 
   @override
@@ -506,39 +668,120 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
       ),
       body: GestureDetector(
         onTapDown: (details) => onTapDown(context, details),
-        child: ListView.builder(
-          itemCount: currentWeddingData.subEvents.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onLongPress: () {
-                showMenu(
-                  context: context,
-                  position: RelativeRect.fromLTRB(posx, posy, posx, posy),
-                  items: <PopupMenuEntry>[
-                    PopupMenuItem(
-                      value: 0,
-                      child: Text("Delete"),
-                    ),
-                  ],
-                ).then(
-                  (value) async {
-                    if (value == 0) {
-                      bool shouldDelate = await delateAlort(context, index);
+        child: Scrollbar(
+          child: ListView.builder(
+            itemCount: currentWeddingData.subEvents.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onLongPress: () {
+                  showMenu(
+                    context: context,
+                    position: RelativeRect.fromLTRB(posx, posy, posx, posy),
+                    items: <PopupMenuEntry>[
+                      PopupMenuItem(
+                        value: 0,
+                        child: Text("Delete"),
+                      ),
+                    ],
+                  ).then(
+                    (value) async {
+                      if (value == 0) {
+                        bool shouldDelate = await delateAlort(context, index);
 
-                      if (shouldDelate != null && shouldDelate) {
-                        setState(() {
-                          currentWeddingData.removeSubEventByIndex(index);
-                        });
+                        if (shouldDelate != null && shouldDelate) {
+                          setState(() {
+                            currentWeddingData.removeSubEventByIndex(index);
+                          });
+                        }
                       }
-                    }
-                  },
-                );
-              },
-              child: Card(
-                child: Text(currentWeddingData.subEvents[index].eventName),
-              ),
-            );
-          },
+                    },
+                  );
+                },
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Row(
+                      children: [
+                        ClipOval(
+                          child: Container(
+                            color: Colors.blue,
+                            width: 64,
+                            height: 64,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  monthsAbr[currentWeddingData.subEvents[index]
+                                          .eventDateTime.month -
+                                      1],
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  currentWeddingData
+                                      .subEvents[index].eventDateTime.day
+                                      .toString(),
+                                  style: TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  softWrap: true,
+                                ),
+                                Text(
+                                  currentWeddingData
+                                      .subEvents[index].eventDateTime.year
+                                      .toString(),
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              currentWeddingData.subEvents[index].eventName,
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: (deviceInfo.platformBrightness ==
+                                        Brightness.dark)
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                            Text(
+                              currentWeddingData
+                                  .subEvents[index].eventDescription,
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: (deviceInfo.platformBrightness ==
+                                        Brightness.dark)
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  color: generateCardColor(),
+                  shadowColor: generateCardShadowColor(),
+                ),
+              );
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -551,6 +794,122 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
           await _saveEvents();
         },
       ),
+    );
+  }
+}
+
+class EventCard extends StatefulWidget {
+  const EventCard({Key key, this.index}) : super(key: key);
+
+  final int index;
+
+  @override
+  _EventCardState createState() => _EventCardState();
+}
+
+class _EventCardState extends State<EventCard> {
+  Color generateCardColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.white;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.grey[850];
+    else
+      return (deviceInfo.platformBrightness == Brightness.dark)
+          ? Colors.grey[850]
+          : Colors.white;
+  }
+
+  Color generateCardShadowColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.black;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.white;
+    else
+      return (deviceInfo.platformBrightness == Brightness.dark)
+          ? Colors.white
+          : Colors.black;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: Row(
+          children: [
+            ClipOval(
+              child: Container(
+                color: Colors.blue,
+                width: 64,
+                height: 64,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      monthsAbr[currentWeddingData
+                              .subEvents[widget.index].eventDateTime.month -
+                          1],
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      currentWeddingData
+                          .subEvents[widget.index].eventDateTime.day
+                          .toString(),
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      softWrap: true,
+                    ),
+                    Text(
+                      currentWeddingData
+                          .subEvents[widget.index].eventDateTime.year
+                          .toString(),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 10,
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  currentWeddingData.subEvents[widget.index].eventName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: (deviceInfo.platformBrightness == Brightness.dark)
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+                Text(
+                  currentWeddingData.subEvents[widget.index].eventDescription,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: (deviceInfo.platformBrightness == Brightness.dark)
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      color: generateCardColor(),
+      shadowColor: generateCardShadowColor(),
     );
   }
 }

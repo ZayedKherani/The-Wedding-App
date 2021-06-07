@@ -1,0 +1,21 @@
+Image - Amin Kherani Weeding
+05 Sep 2021
+Descr 2 line.... REad More
+Groom profile photo WEds Bride profile photo
+
+
+No Arrow
+above provided during add weeding (regisration with a Code)
+
+
+Icon - DateTime
+	   Location
+	   Descr - one liner 
+	   Instruction (Optional)
+	   
+
+	   
+	   
+	   
+
+
