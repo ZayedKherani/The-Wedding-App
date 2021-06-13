@@ -15,7 +15,7 @@ List<EventData> eventData = [];
 List<int> eventDataIDs = [];
 MediaQueryData deviceInfo;
 
-Future<void> _saveEvents() async {
+Future<void> _saveWeddigns() async {
   final prefs = await SharedPreferences.getInstance();
 
   for (int i = 0; i < eventData.length; i++) {
@@ -105,236 +105,6 @@ Future<void> delateWedding(int index) async {
   prefs.setString("eventDataIDs", eventDataIDs.toString());
 
   eventData.removeAt(index);
-}
-
-class CupertinoHome extends StatefulWidget {
-  @override
-  _CupertinoHomeState createState() => _CupertinoHomeState();
-}
-
-class _CupertinoHomeState extends State<CupertinoHome> {
-  Future<void> createEvent(BuildContext context) async {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: Text("Create A New Wedding"),
-          content: Padding(
-            padding: EdgeInsets.only(
-              top: 5,
-            ),
-            child: CupertinoTextField(
-              onChanged: (value) {
-                setState(() {
-                  eventNameText = value;
-                });
-              },
-              controller: _createEventController,
-              placeholder: "Event Name",
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: Text("Cancel"),
-              isDefaultAction: true,
-              isDestructiveAction: false,
-              onPressed: () {
-                _createEventController.clear();
-                Navigator.pop(context);
-              },
-            ),
-            CupertinoDialogAction(
-              child: Text("Create"),
-              isDefaultAction: true,
-              isDestructiveAction: false,
-              onPressed: () {
-                setState(() {
-                  eventName = eventNameText;
-                });
-
-                _createEventController.clear();
-
-                Navigator.pop(context);
-
-                setState(() {
-                  _addToList(eventName);
-                });
-
-                _saveEvents();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<bool> delateAlort(BuildContext context, int index) async {
-    return await showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: Text("Delete Wedding?"),
-          content: Padding(
-            padding: EdgeInsets.only(top: 5),
-            child: Text(
-                "The Wedding \"${eventData[index].eventName}\" will be removed from your account and would require a rescan of the QR code."),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: Text("Cancel"),
-              isDefaultAction: true,
-              isDestructiveAction: false,
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
-            ),
-            CupertinoDialogAction(
-              child: Text("Delete"),
-              isDefaultAction: false,
-              isDestructiveAction: true,
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  void initState() {
-    WidgetsBinding.instance.addPostFrameCallback(
-      (timeStamp) {
-        setState(() {
-          _readEvents();
-        });
-      },
-    );
-
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    setState(() {
-      deviceInfo = MediaQuery.of(context);
-    });
-
-    return CupertinoPageScaffold(
-      child: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            CupertinoSliverNavigationBar(
-              leading: CupertinoButton(
-                padding: EdgeInsets.all(10),
-                child: Text("Settings"),
-                onPressed: () => Navigator.pushNamed(context, 'settings'),
-              ),
-              largeTitle: Text("The Wedding App"),
-              trailing: CupertinoButton(
-                padding: EdgeInsets.all(10),
-                child: Icon(
-                  CupertinoIcons.add,
-                ),
-                onPressed: () async {
-                  await createEvent(context);
-
-                  await _saveEvents();
-                },
-              ),
-            ),
-          ];
-        },
-        body: CupertinoScrollbar(
-          child: ListView.builder(
-            itemCount: eventData.length,
-            itemBuilder: (context, index) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CupertinoContextMenu(
-                    child: GestureDetector(
-                      child: Container(
-                        height: 70,
-                        color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.tertiarySystemGroupedBackground,
-                          context,
-                        ),
-                        child: CupertinoFormRow(
-                          child: CupertinoButton(
-                            child: Icon(
-                              CupertinoIcons.forward,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                CupertinoPageRoute(
-                                  builder: (context) => CupertinoWeddingPage(
-                                    currentEventDataToSave: eventData[index],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          prefix: Text(
-                            eventData[index].eventName,
-                          ),
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          CupertinoPageRoute(
-                            builder: (context) => CupertinoWeddingPage(
-                              currentEventDataToSave: eventData[index],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    actions: [
-                      CupertinoContextMenuAction(
-                        child: Text(
-                          "Cancel",
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        isDestructiveAction: false,
-                        isDefaultAction: true,
-                      ),
-                      CupertinoContextMenuAction(
-                        child: Text(
-                          "Delete",
-                        ),
-                        isDefaultAction: false,
-                        isDestructiveAction: true,
-                        trailingIcon: CupertinoIcons.delete,
-                        onPressed: () async {
-                          Navigator.pop(context);
-
-                          bool shouldDelate = await delateAlort(context, index);
-
-                          if (shouldDelate) {
-                            setState(() {
-                              delateWedding(index);
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  if (index + 1 != eventData.length) Divider(height: 2),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class MaterialHome extends StatefulWidget {
@@ -549,7 +319,12 @@ class _MaterialHomeState extends State<MaterialHome> {
                   child: OpenContainer(
                     closedBuilder: (context, animation) {
                       return ListTile(
-                        title: Text(eventData[index].eventName),
+                        title: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(eventData[index].eventName),
+                          ],
+                        ),
                         subtitle: Text(eventData[index].nextEventDateTime()),
                         tileColor: generateListTileColor(),
                       );
@@ -575,7 +350,7 @@ class _MaterialHomeState extends State<MaterialHome> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await createEvent(context);
-          await _saveEvents();
+          await _saveWeddigns();
         },
         tooltip: 'Increment',
         child: Icon(Icons.add),

@@ -1,12 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
 import 'home.dart';
-
-//TODO: Fix entire Material App after git update
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,10 +12,6 @@ void main() {
 }
 
 WeddingAppTheme weddingAppTheme = WeddingAppTheme();
-
-CupertinoWeddingTheme cupertinoWeddingTheme = CupertinoWeddingTheme(
-  cupertinoThemeData: CupertinoThemeData(),
-);
 
 int themeSegmentState;
 int themeRadioState;
@@ -47,21 +40,21 @@ class _TheWeddingAppState extends State<TheWeddingApp> {
       setState(() {});
     });
 
-    cupertinoWeddingTheme.addListener(() {
-      setState(() {});
-    });
+    // cupertinoWeddingTheme.addListener(() {
+    //   setState(() {});
+    // });
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       await getThemeFromStorage();
       setState(() {
         weddingAppTheme.changeTheme(themeModeValue);
-        cupertinoWeddingTheme.changeTheme(themeModeValue);
+        // cupertinoWeddingTheme.changeTheme(themeModeValue);
       });
     });
 
     setState(() {
       themeRadioState = weddingAppTheme.themeMode;
-      themeSegmentState = cupertinoWeddingTheme.themeModeInt;
+      // themeSegmentState = cupertinoWeddingTheme.themeModeInt;
     });
 
     super.initState();
@@ -74,178 +67,17 @@ class _TheWeddingAppState extends State<TheWeddingApp> {
 
     return Builder(
       builder: (context) {
-        switch (themeData.platform) {
-          case TargetPlatform.android:
-          case TargetPlatform.fuchsia:
-          case TargetPlatform.linux:
-          case TargetPlatform.windows:
-          // return MaterialApp(
-          //   routes: {
-          //     '/': (_) => MaterialHome(),
-          //     'settings': (_) => MaterialSettingsPage(),
-          //   },
-          //   initialRoute: '/',
-          //   theme: lightTheme,
-          //   darkTheme: darkTheme,
-          //   themeMode: weddingAppTheme.currentTheme(),
-          //   debugShowCheckedModeBanner: false,
-          //   title: 'The Wedding App',
-          // );
-          case TargetPlatform.iOS:
-          case TargetPlatform.macOS:
-            return CupertinoApp(
-              theme: cupertinoWeddingTheme.getTheme(),
-              debugShowCheckedModeBanner: false,
-              initialRoute: '/',
-              routes: {
-                '/': (_) => CupertinoHome(),
-                'settings': (_) => CupertinoSettings(),
-              },
-            );
-        }
-
-        return Center(
-          child: CupertinoActivityIndicator(),
-        );
-      },
-    );
-  }
-}
-
-class CupertinoSettings extends StatefulWidget {
-  @override
-  _CupertinoSettingsState createState() => _CupertinoSettingsState();
-}
-
-class _CupertinoSettingsState extends State<CupertinoSettings> {
-  Brightness currentThemeMode;
-
-  TextStyle generateTextStyle() {
-    if (cupertinoWeddingTheme.themeModeInt == 0 ||
-        cupertinoWeddingTheme.themeModeInt == 1)
-      return null;
-    else {
-      return (SchedulerBinding.instance.window.platformBrightness ==
-              Brightness.light)
-          ? cupertinoWeddingTheme.light.textTheme.textStyle
-          : cupertinoWeddingTheme.dark.textTheme.textStyle;
-    }
-  }
-
-  @override
-  void initState() {
-    setState(() {
-      currentThemeMode = SchedulerBinding.instance.window.platformBrightness;
-
-      themeSegmentState = cupertinoWeddingTheme.themeModeInt;
-    });
-
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (SchedulerBinding.instance.window.platformBrightness !=
-        currentThemeMode) {
-      setState(() {
-        currentThemeMode = SchedulerBinding.instance.window.platformBrightness;
-      });
-    }
-
-    return Builder(
-      builder: (context) {
-        return CupertinoPageScaffold(
-          child: NestedScrollView(
-            floatHeaderSlivers: true,
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                CupertinoSliverNavigationBar(
-                  largeTitle: Text("Settings"),
-                  previousPageTitle: "The Wedding App",
-                ),
-              ];
-            },
-            body: CupertinoScrollbar(
-              child: ListView(
-                children: [
-                  CupertinoFormSection(
-                    children: [
-                      CupertinoFormRow(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: Column(
-                            children: [
-                              Text(
-                                "Theme",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: CupertinoDynamicColor.resolve(
-                                    CupertinoDynamicColor.withBrightness(
-                                      color: Colors.black,
-                                      darkColor: Colors.white,
-                                    ),
-                                    context,
-                                  ),
-                                ),
-                              ),
-                              CupertinoSegmentedControl(
-                                onValueChanged: (value) {
-                                  setState(() {
-                                    themeSegmentState = value;
-                                    cupertinoWeddingTheme.changeTheme(value);
-                                  });
-                                },
-                                groupValue: themeSegmentState,
-                                children: {
-                                  0: Text(
-                                    "Light",
-                                  ),
-                                  1: Text(
-                                    "Dark",
-                                  ),
-                                  2: Padding(
-                                    padding: EdgeInsets.all(5),
-                                    child: Text(
-                                      "System",
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      CupertinoFormRow(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: Column(
-                            children: [
-                              Text(
-                                "Notification",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: CupertinoDynamicColor.resolve(
-                                    CupertinoDynamicColor.withBrightness(
-                                      color: Colors.black,
-                                      darkColor: Colors.white,
-                                    ),
-                                    context,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return MaterialApp(
+          routes: {
+            '/': (_) => MaterialHome(),
+            'settings': (_) => MaterialSettingsPage(),
+          },
+          initialRoute: '/',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: weddingAppTheme.currentTheme(),
+          debugShowCheckedModeBanner: false,
+          title: 'The Wedding App',
         );
       },
     );

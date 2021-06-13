@@ -1,13 +1,15 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'dart:io';
 
 class EventData {
+  // File groomPhoto, bridePhoto, weddingPhoto;
+  String eventName, eventDescription;
   List<WeddingEvent> subEvents;
   List<int> subEventIDs = [];
   DateTime eventDateTime;
   // List<Admin> admins;
   // List<Guest> guests;
-  String eventName;
   int eventNumber;
   // int eventId;
 
@@ -16,11 +18,13 @@ class EventData {
     String eventName,
     DateTime eventDateTime,
     List<WeddingEvent> subEvents,
+    String eventDescription,
   }) {
     this.eventNumber = eventNumber;
     this.eventName = eventName;
     this.eventDateTime = eventDateTime;
     this.subEvents = (subEvents == null) ? [] : subEvents;
+    this.eventDescription = eventDescription;
   }
 
   void setEventDateTime(DateTime dateTime) {
@@ -65,12 +69,14 @@ class EventData {
         'eventNumber': eventNumber,
         'eventName': eventName,
         'eventDateTime': eventDateTime.toString(),
+        'eventDescription': eventDescription,
       };
 
   factory EventData.fromMap(Map<String, dynamic> map) => EventData(
         eventNumber: map['eventNumber'],
         eventName: map['eventName'],
         eventDateTime: DateTime.parse(map['eventDateTime']),
+        eventDescription: map['eventDescription'],
       );
 }
 

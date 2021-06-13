@@ -9,13 +9,6 @@ above provided during add weeding (regisration with a Code)
 
 
 Icon - DateTime
-	   Location
-	   Descr - one liner 
-	   Instruction (Optional)
-	   
-
-	   
-	   
-	   
-
-
+	Location
+	Descr - one liner 
+	Instruction (Optional)
