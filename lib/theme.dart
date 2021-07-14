@@ -7,7 +7,7 @@ ThemeData lightTheme = ThemeData.light();
 ThemeData darkTheme = ThemeData.dark();
 
 class WeddingAppTheme with ChangeNotifier {
-  int themeMode;
+  int? themeMode;
 
   ThemeMode currentTheme() {
     if (themeMode == 0)
@@ -21,20 +21,14 @@ class WeddingAppTheme with ChangeNotifier {
   void changeTheme(int themeModeValue) async {
     final prefs = await SharedPreferences.getInstance();
 
-    themeModeValue = (themeModeValue == null) ? 2 : themeModeValue;
-
     await prefs.setInt("themeValue", themeModeValue);
 
     themeMode = themeModeValue;
 
-    print(
-      "Material: {themeModeValue: $themeModeValue, themeMode: $themeMode, themeValueSharedPreferences: ${prefs.getInt("themeValue")}}",
-    );
-
     notifyListeners();
   }
 
-  Future<int> getThemeModeInt() async {
+  Future<int?> getThemeModeInt() async {
     notifyListeners();
 
     return this.themeMode;
@@ -42,20 +36,20 @@ class WeddingAppTheme with ChangeNotifier {
 }
 
 class CupertinoWeddingTheme with ChangeNotifier {
-  int themeModeInt;
+  int? themeModeInt;
 
-  CupertinoThemeData light;
+  CupertinoThemeData? light;
 
-  CupertinoThemeData dark;
+  CupertinoThemeData? dark;
 
-  CupertinoThemeData system;
+  CupertinoThemeData? system;
 
   CupertinoWeddingTheme({
-    @required CupertinoThemeData cupertinoThemeData,
-    int defaultThemeMode,
+    @required CupertinoThemeData? cupertinoThemeData,
+    int? defaultThemeMode,
   }) {
     light = CupertinoThemeData(
-      barBackgroundColor: cupertinoThemeData.barBackgroundColor,
+      barBackgroundColor: cupertinoThemeData!.barBackgroundColor,
       brightness: Brightness.light,
       primaryColor: cupertinoThemeData.primaryColor,
       primaryContrastingColor: cupertinoThemeData.primaryContrastingColor,
@@ -75,7 +69,7 @@ class CupertinoWeddingTheme with ChangeNotifier {
     system = cupertinoThemeData;
   }
 
-  CupertinoThemeData getTheme() {
+  CupertinoThemeData? getTheme() {
     if (this.themeModeInt == 0)
       return light;
     else if (this.themeModeInt == 1)
@@ -87,15 +81,9 @@ class CupertinoWeddingTheme with ChangeNotifier {
   void changeTheme(int themeModeInt) async {
     final prefs = await SharedPreferences.getInstance();
 
-    themeModeInt = (themeModeInt == null) ? 2 : themeModeInt;
-
     this.themeModeInt = themeModeInt;
 
     await prefs.setInt("themeValue", themeModeInt);
-
-    print(
-      "Cupertino: {themeModeValue: $themeModeInt, themeMode: ${getTheme().brightness}, themeValueSharedPreferences: ${prefs.getInt("themeValue")}}",
-    );
 
     notifyListeners();
   }

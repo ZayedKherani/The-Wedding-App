@@ -13,8 +13,8 @@ void main() {
 
 WeddingAppTheme weddingAppTheme = WeddingAppTheme();
 
-int themeSegmentState;
-int themeRadioState;
+int? themeSegmentState;
+int? themeRadioState;
 
 class TheWeddingApp extends StatefulWidget {
   @override
@@ -22,16 +22,20 @@ class TheWeddingApp extends StatefulWidget {
 }
 
 class _TheWeddingAppState extends State<TheWeddingApp> {
-  int themeModeValue;
+  int? themeModeValue;
 
   Future<void> getThemeFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
 
-    int themeValue = prefs.getInt("themeValue");
-
-    themeValue = (themeValue == null) ? 2 : themeValue;
+    int themeValue = prefs.getInt("themeValue") ?? 2;
 
     themeModeValue = themeValue;
+  }
+
+  void getDefaultThemeRdaioState() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    themeRadioState = prefs.getInt("themeValue");
   }
 
   @override
@@ -44,11 +48,14 @@ class _TheWeddingAppState extends State<TheWeddingApp> {
     //   setState(() {});
     // });
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) async {
       await getThemeFromStorage();
+
       setState(() {
-        weddingAppTheme.changeTheme(themeModeValue);
+        weddingAppTheme.changeTheme(themeModeValue ?? 2);
         // cupertinoWeddingTheme.changeTheme(themeModeValue);
+
+        getDefaultThemeRdaioState();
       });
     });
 
@@ -62,15 +69,14 @@ class _TheWeddingAppState extends State<TheWeddingApp> {
 
   @override
   Widget build(BuildContext context) {
-    ThemeData themeData = Theme.of(context);
-    assert(themeData.platform != null);
+    // ThemeData themeData = Theme.of(context);
 
     return Builder(
       builder: (context) {
         return MaterialApp(
           routes: {
-            '/': (_) => MaterialHome(),
-            'settings': (_) => MaterialSettingsPage(),
+            '/': (_) => WeddingHome(),
+            'settings': (_) => SettingsPage(),
           },
           initialRoute: '/',
           theme: lightTheme,
@@ -84,19 +90,19 @@ class _TheWeddingAppState extends State<TheWeddingApp> {
   }
 }
 
-class MaterialSettingsPage extends StatefulWidget {
+class SettingsPage extends StatefulWidget {
   @override
-  _MaterialSettingsPageState createState() => _MaterialSettingsPageState();
+  _SettingsPageState createState() => _SettingsPageState();
 }
 
-class _MaterialSettingsPageState extends State<MaterialSettingsPage> {
+class _SettingsPageState extends State<SettingsPage> {
   Color generateTextColor() {
     if (weddingAppTheme.themeMode == 0)
       return Colors.black;
     else if (weddingAppTheme.themeMode == 1)
       return Colors.white;
     else
-      return (SchedulerBinding.instance.window.platformBrightness ==
+      return (SchedulerBinding.instance!.window.platformBrightness ==
               Brightness.dark)
           ? Colors.white
           : Colors.black;
@@ -127,8 +133,8 @@ class _MaterialSettingsPageState extends State<MaterialSettingsPage> {
                   groupValue: themeRadioState,
                   onChanged: (value) {
                     setState(() {
-                      themeRadioState = value;
-                      weddingAppTheme.changeTheme(value);
+                      themeRadioState = value as int?;
+                      weddingAppTheme.changeTheme(value as int);
                     });
                   },
                   title: Text(
@@ -143,7 +149,7 @@ class _MaterialSettingsPageState extends State<MaterialSettingsPage> {
                   groupValue: themeRadioState,
                   onChanged: (value) {
                     setState(() {
-                      themeRadioState = value;
+                      themeRadioState = value as int;
                       weddingAppTheme.changeTheme(value);
                     });
                   },
@@ -159,7 +165,7 @@ class _MaterialSettingsPageState extends State<MaterialSettingsPage> {
                   groupValue: themeRadioState,
                   onChanged: (value) {
                     setState(() {
-                      themeRadioState = value;
+                      themeRadioState = value as int;
                       weddingAppTheme.changeTheme(value);
                     });
                   },

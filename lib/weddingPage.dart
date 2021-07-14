@@ -6,36 +6,36 @@ import 'eventData.dart';
 import 'main.dart';
 
 TextEditingController dateTimeController = TextEditingController(text: "");
-String eventNameText, eventName, eventDescriptionText, eventDescription;
+String? eventNameText, eventName, eventDescriptionText, eventDescription;
 DateTime selectedDate = DateTime.now().add(Duration(hours: 2));
-EventData currentWeddingData;
-MediaQueryData deviceInfo;
+EventData? currentWeddingData;
+MediaQueryData? deviceInfo;
 
 _readEvents() async {
   final prefs = await SharedPreferences.getInstance();
 
-  int loopLength = (prefs.getInt(
-              "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}") ==
+  int? loopLength = (prefs.getInt(
+              "numberOfEvents${currentWeddingData!.eventName}${currentWeddingData!.eventNumber}") ==
           null)
       ? 0
       : prefs.getInt(
-          "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}");
+          "numberOfEvents${currentWeddingData!.eventName}${currentWeddingData!.eventNumber}");
 
-  String subEventIDsStrins = prefs.getString(
-      "subEventIDs${currentWeddingData.eventName}${currentWeddingData.eventNumber}");
+  String? subEventIDsStrins = prefs.getString(
+      "subEventIDs${currentWeddingData!.eventName}${currentWeddingData!.eventNumber}");
 
   if (subEventIDsStrins != null && subEventIDsStrins != "[]") {
-    currentWeddingData.subEventIDs = [];
+    currentWeddingData!.subEventIDs = [];
 
     var map = json.decode(subEventIDsStrins);
 
     for (int i = 0; i < map.length; i++)
-      currentWeddingData.subEventIDs.add(map[i]);
+      currentWeddingData!.subEventIDs!.add(map[i]);
 
-    if (loopLength != currentWeddingData.subEvents.length) {
-      for (int i = 0; i < loopLength; i++) {
-        String jsonCurrentEventDataToRead = prefs.getString(
-                "${currentWeddingData.subEventIDs[i]}${currentWeddingData.eventName}${currentWeddingData.eventNumber}") ??
+    if (loopLength != currentWeddingData!.subEvents!.length) {
+      for (int i = 0; i < loopLength!; i++) {
+        String? jsonCurrentEventDataToRead = prefs.getString(
+                "${currentWeddingData!.subEventIDs![i]}${currentWeddingData!.eventName}${currentWeddingData!.eventNumber}") ??
             null;
 
         if (jsonCurrentEventDataToRead != null) {
@@ -44,7 +44,7 @@ _readEvents() async {
           WeddingEvent currentEventData =
               WeddingEvent.fromMap(currentEventDataToRead);
 
-          currentWeddingData.addSubEvent(currentEventData);
+          currentWeddingData!.addSubEvent(currentEventData);
         }
       }
     }
@@ -54,69 +54,55 @@ _readEvents() async {
 _saveEvents() async {
   final prefs = await SharedPreferences.getInstance();
 
-  for (int i = 0; i < currentWeddingData.subEvents.length; i++) {
+  for (int i = 0; i < currentWeddingData!.subEvents!.length; i++) {
     Map<String, dynamic> currentEventDataToSave =
-        currentWeddingData.subEvents[i].toMap();
+        currentWeddingData!.subEvents![i].toMap();
     String jsonCurrentEventDataToSave = jsonEncode(currentEventDataToSave);
 
     prefs.setString(
-        "${currentWeddingData.subEvents[i].eventNumber}${currentWeddingData.eventName}${currentWeddingData.eventNumber}",
+        "${currentWeddingData!.subEvents![i].eventNumber}${currentWeddingData!.eventName}${currentWeddingData!.eventNumber}",
         jsonCurrentEventDataToSave);
   }
 
   prefs.setInt(
-      "numberOfEvents${currentWeddingData.eventName}${currentWeddingData.eventNumber}",
-      currentWeddingData.subEvents.length);
+      "numberOfEvents${currentWeddingData!.eventName}${currentWeddingData!.eventNumber}",
+      currentWeddingData!.subEvents!.length);
 }
 
 void addToList(String eventName, String eventDescription) {
   int eventNumber;
 
-  if (currentWeddingData.subEvents.isEmpty) {
+  if (currentWeddingData!.subEvents!.isEmpty) {
     eventNumber = 1;
   } else {
-    eventNumber = currentWeddingData.subEvents.last.eventNumber + 1;
+    eventNumber = currentWeddingData!.subEvents!.last.eventNumber! + 1;
   }
 
   WeddingEvent currentWeddingEventData = WeddingEvent(
-      eventNumber: eventNumber,
-      eventName: eventName,
-      eventDateTime: selectedDate,
-      eventDescription: eventDescription);
+    eventNumber: eventNumber,
+    eventName: eventName,
+    eventDateTime: selectedDate,
+    eventDescription: eventDescription,
+  );
 
-  currentWeddingData.addSubEvent(currentWeddingEventData);
+  currentWeddingData!.addSubEvent(currentWeddingEventData);
 }
 
-List<String> monthsAbr = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC"
-];
-
 class MaterialWeddingPage extends StatefulWidget {
-  const MaterialWeddingPage({Key key, this.currentEventDataToSave})
+  const MaterialWeddingPage({Key? key, this.currentEventDataToSave})
       : super(key: key);
 
-  final EventData currentEventDataToSave;
+  final EventData? currentEventDataToSave;
 
   @override
   _MaterialWeddingPageState createState() => _MaterialWeddingPageState();
 }
 
 class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
-  double posx, posy;
+  double? posx, posy;
 
   buildDateTimePicker(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime.now(),
@@ -129,25 +115,29 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
       fieldHintText: 'Month/Date/Year',
     );
 
-    final TimeOfDay changedTimer = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour: selectedDate.hour,
-        minute: selectedDate.minute,
-      ),
-    );
+    if (picked != null) {
+      final TimeOfDay? changedTimer = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay(
+          hour: selectedDate.hour,
+          minute: selectedDate.minute,
+        ),
+      );
 
-    if (changedTimer != null && picked != null) {
-      setState(() {
-        selectedDate = DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          changedTimer.hour,
-          changedTimer.minute,
-        );
-        dateTimeController.text = selectedDate.toString().substring(0, 16);
-      });
+      if (changedTimer != null) {
+        setState(() {
+          selectedDate = DateTime(
+            picked.year,
+            picked.month,
+            picked.day,
+            changedTimer.hour,
+            changedTimer.minute,
+          );
+
+          dateTimeController.text =
+              "${(selectedDate.day < 10) ? '0' : ''}${selectedDate.day} ${monthsAbr[selectedDate.month - 1]} ${selectedDate.year} ${(selectedDate.hour == 0) ? 12 : (selectedDate.hour > 12) ? selectedDate.hour - 12 : selectedDate.hour}:${selectedDate.minute} ${(selectedDate.hour == 0) ? 'am' : (selectedDate.hour > 12) ? 'pm' : 'am'}";
+        });
+      }
     }
   }
 
@@ -243,8 +233,8 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                 });
                 Navigator.pop(context);
                 addToList(
-                  eventName,
-                  eventDescription,
+                  eventName ?? "",
+                  eventDescription ?? "",
                 );
               },
               style: ButtonStyle(
@@ -274,7 +264,7 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
           content: Padding(
             padding: EdgeInsets.only(top: 5),
             child: Text(
-                "The Event \"${currentWeddingData.subEvents[index].eventName}\" will be removed from your Wedding."),
+                "The Event \"${currentWeddingData!.subEvents![index].eventName}\" will be removed from your Wedding."),
           ),
           actions: [
             TextButton(
@@ -314,7 +304,7 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
   }
 
   void onTapDown(BuildContext context, TapDownDetails details) {
-    final RenderBox box = context.findRenderObject();
+    final box = context.findRenderObject() as RenderBox;
     final Offset localOffset = box.globalToLocal(details.globalPosition);
 
     setState(() {
@@ -323,24 +313,24 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
     });
   }
 
-  Color generateCardColor() {
+  Color? generateCardColor() {
     if (weddingAppTheme.themeMode == 0)
       return Colors.white;
     else if (weddingAppTheme.themeMode == 1)
       return Colors.grey[850];
     else
-      return (deviceInfo.platformBrightness == Brightness.dark)
+      return (deviceInfo!.platformBrightness == Brightness.dark)
           ? Colors.grey[850]
           : Colors.white;
   }
 
-  Color generateCardShadowColor() {
+  Color? generateCardShadowColor() {
     if (weddingAppTheme.themeMode == 0)
       return Colors.black;
     else if (weddingAppTheme.themeMode == 1)
       return Colors.white;
     else
-      return (deviceInfo.platformBrightness == Brightness.dark)
+      return (deviceInfo!.platformBrightness == Brightness.dark)
           ? Colors.white
           : Colors.black;
   }
@@ -365,19 +355,19 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(currentWeddingData.eventName),
+        title: Text(currentWeddingData!.eventName ?? ""),
       ),
       body: GestureDetector(
         onTapDown: (details) => onTapDown(context, details),
         child: Scrollbar(
           child: ListView.builder(
-            itemCount: currentWeddingData.subEvents.length,
+            itemCount: currentWeddingData!.subEvents!.length,
             itemBuilder: (context, index) {
               return GestureDetector(
                 onLongPress: () {
                   showMenu(
                     context: context,
-                    position: RelativeRect.fromLTRB(posx, posy, posx, posy),
+                    position: RelativeRect.fromLTRB(posx!, posy!, posx!, posy!),
                     items: <PopupMenuEntry>[
                       PopupMenuItem(
                         value: 0,
@@ -389,9 +379,9 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                       if (value == 0) {
                         bool shouldDelate = await delateAlort(context, index);
 
-                        if (shouldDelate != null && shouldDelate) {
+                        if (shouldDelate) {
                           setState(() {
-                            currentWeddingData.removeSubEventByIndex(index);
+                            currentWeddingData!.removeSubEventByIndex(index);
                           });
                         }
                       }
@@ -413,8 +403,10 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  monthsAbr[currentWeddingData.subEvents[index]
-                                          .eventDateTime.month -
+                                  monthsAbr[currentWeddingData!
+                                          .subEvents![index]
+                                          .eventDateTime!
+                                          .month -
                                       1],
                                   style: TextStyle(
                                     fontSize: 9,
@@ -422,8 +414,8 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                                   ),
                                 ),
                                 Text(
-                                  currentWeddingData
-                                      .subEvents[index].eventDateTime.day
+                                  currentWeddingData!
+                                      .subEvents![index].eventDateTime!.day
                                       .toString(),
                                   style: TextStyle(
                                     fontSize: 19,
@@ -432,8 +424,8 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                                   softWrap: true,
                                 ),
                                 Text(
-                                  currentWeddingData
-                                      .subEvents[index].eventDateTime.year
+                                  currentWeddingData!
+                                      .subEvents![index].eventDateTime!.year
                                       .toString(),
                                   style: TextStyle(
                                     fontSize: 9,
@@ -452,21 +444,23 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              currentWeddingData.subEvents[index].eventName,
+                              currentWeddingData!.subEvents![index].eventName ??
+                                  "",
                               style: TextStyle(
                                 fontSize: 18,
-                                color: (deviceInfo.platformBrightness ==
+                                color: (deviceInfo!.platformBrightness ==
                                         Brightness.dark)
                                     ? Colors.white
                                     : Colors.black,
                               ),
                             ),
                             Text(
-                              currentWeddingData
-                                  .subEvents[index].eventDescription,
+                              currentWeddingData!
+                                      .subEvents![index].eventDescription ??
+                                  "",
                               style: TextStyle(
                                 fontSize: 9,
-                                color: (deviceInfo.platformBrightness ==
+                                color: (deviceInfo!.platformBrightness ==
                                         Brightness.dark)
                                     ? Colors.white
                                     : Colors.black,
@@ -495,122 +489,6 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
           await _saveEvents();
         },
       ),
-    );
-  }
-}
-
-class EventCard extends StatefulWidget {
-  const EventCard({Key key, this.index}) : super(key: key);
-
-  final int index;
-
-  @override
-  _EventCardState createState() => _EventCardState();
-}
-
-class _EventCardState extends State<EventCard> {
-  Color generateCardColor() {
-    if (weddingAppTheme.themeMode == 0)
-      return Colors.white;
-    else if (weddingAppTheme.themeMode == 1)
-      return Colors.grey[850];
-    else
-      return (deviceInfo.platformBrightness == Brightness.dark)
-          ? Colors.grey[850]
-          : Colors.white;
-  }
-
-  Color generateCardShadowColor() {
-    if (weddingAppTheme.themeMode == 0)
-      return Colors.black;
-    else if (weddingAppTheme.themeMode == 1)
-      return Colors.white;
-    else
-      return (deviceInfo.platformBrightness == Brightness.dark)
-          ? Colors.white
-          : Colors.black;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(10),
-        child: Row(
-          children: [
-            ClipOval(
-              child: Container(
-                color: Colors.blue,
-                width: 64,
-                height: 64,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      monthsAbr[currentWeddingData
-                              .subEvents[widget.index].eventDateTime.month -
-                          1],
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      currentWeddingData
-                          .subEvents[widget.index].eventDateTime.day
-                          .toString(),
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      softWrap: true,
-                    ),
-                    Text(
-                      currentWeddingData
-                          .subEvents[widget.index].eventDateTime.year
-                          .toString(),
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 10,
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  currentWeddingData.subEvents[widget.index].eventName,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: (deviceInfo.platformBrightness == Brightness.dark)
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                ),
-                Text(
-                  currentWeddingData.subEvents[widget.index].eventDescription,
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: (deviceInfo.platformBrightness == Brightness.dark)
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      color: generateCardColor(),
-      shadowColor: generateCardShadowColor(),
     );
   }
 }
