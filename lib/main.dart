@@ -176,6 +176,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+
+                    await prefs.clear();
+                  },
+                  child: Text(
+                    "Clear Storage",
+                  ),
+                ),
               ],
             ),
           ],

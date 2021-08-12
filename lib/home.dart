@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 
 import 'weddingPage.dart';
+import 'universals.dart';
 import 'eventData.dart';
 import 'main.dart';
 
 TextEditingController _weddingDescriptionController = TextEditingController();
+TextEditingController _weddingDateTimeController = TextEditingController();
 TextEditingController _weddingNameController = TextEditingController();
-TextEditingController _dateTimeController = TextEditingController();
 
 GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 DateTime selectedDate = DateTime.now();
+int createWeddingItemCount = 6;
 List<EventData> eventData = [];
 String eventDescription = "";
 List<int> eventDataIDs = [];
@@ -217,19 +219,19 @@ class _WeddingHomeState extends State<WeddingHome> {
             changedTimer.minute,
           );
 
-          _dateTimeController.text =
+          _weddingDateTimeController.text =
               "${(selectedDate.day < 10) ? '0' : ''}${selectedDate.day} ${monthsAbr[selectedDate.month - 1]} ${selectedDate.year} ${(selectedDate.hour == 0) ? 12 : (selectedDate.hour > 12) ? selectedDate.hour - 12 : selectedDate.hour}:${selectedDate.minute} ${(selectedDate.hour == 0) ? 'am' : (selectedDate.hour > 12) ? 'pm' : 'am'}";
         });
       }
     }
   }
 
-  Future<void> createEvent(BuildContext context) async {
+  Future<void> createWedding(BuildContext context) async {
     _weddingNameController.clear();
 
     _weddingDescriptionController.clear();
 
-    _dateTimeController.clear();
+    _weddingDateTimeController.clear();
 
     return showDialog(
       context: context,
@@ -294,7 +296,7 @@ class _WeddingHomeState extends State<WeddingHome> {
                   ),
                   TextFormField(
                     readOnly: true,
-                    controller: _dateTimeController,
+                    controller: _weddingDateTimeController,
                     decoration: InputDecoration(
                       border: new OutlineInputBorder(
                         borderRadius: const BorderRadius.all(
@@ -306,9 +308,8 @@ class _WeddingHomeState extends State<WeddingHome> {
                     onTap: () {
                       buildDateTimePicker(context);
                     },
-                    validator: (value) {
-                      //TODO: implemet date time check
-                      return (value == null || value.isEmpty)
+                    validator: (String? value) {
+                      return (value!.isEmpty)
                           ? 'Enter a valid wedding date'
                           : null;
                     },
@@ -341,13 +342,15 @@ class _WeddingHomeState extends State<WeddingHome> {
           ),
           actions: [
             TextButton(
-              child: Text("Cancel"),
+              child: Text(
+                "Cancel",
+              ),
               onPressed: () {
                 _weddingNameController.clear();
 
                 _weddingDescriptionController.clear();
 
-                _dateTimeController.clear();
+                _weddingDateTimeController.clear();
 
                 Navigator.pop(context);
               },
@@ -357,12 +360,18 @@ class _WeddingHomeState extends State<WeddingHome> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
-                foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                backgroundColor: MaterialStateProperty.all<Color>(
+                  Colors.red,
+                ),
+                foregroundColor: MaterialStateProperty.all<Color>(
+                  Colors.white,
+                ),
               ),
             ),
             TextButton(
-              child: Text("Create"),
+              child: Text(
+                "Create",
+              ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   setState(() {
@@ -597,7 +606,7 @@ class _WeddingHomeState extends State<WeddingHome> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await createEvent(context);
+          await createWedding(context);
           await _saveWeddigns();
         },
         tooltip: 'Increment',
@@ -631,48 +640,27 @@ class _NameTextFormFieldState extends State<NameTextFormField> {
   Future<void> unsplitName() async {
     fullName[widget.personNumber ?? 0] = "";
 
-    for (int i = 0; i < prefix[widget.personNumber ?? 0].length; i++) {
-      fullName[widget.personNumber ?? 0] += prefix[widget.personNumber ?? 0] +
-          ((i == prefix[widget.personNumber ?? 0].length - 1) ? '' : ' ');
-    }
+    fullName[widget.personNumber!] += prefix[widget.personNumber!];
 
     fullName[widget.personNumber ?? 0] +=
         (firstName[widget.personNumber ?? 0].length != 0) ? ' ' : '';
 
-    for (int i = 0; i < firstName[widget.personNumber ?? 0].length; i++) {
-      fullName[widget.personNumber ?? 0] +=
-          firstName[widget.personNumber ?? 0] +
-              ((i == firstName[widget.personNumber ?? 0].length - 1)
-                  ? ''
-                  : ' ');
-    }
+    fullName[widget.personNumber!] += firstName[widget.personNumber!];
 
     fullName[widget.personNumber ?? 0] +=
         (middleName[widget.personNumber ?? 0].length != 0) ? ' ' : '';
 
-    for (int i = 0; i < middleName[widget.personNumber ?? 0].length; i++) {
-      fullName[widget.personNumber ?? 0] +=
-          middleName[widget.personNumber ?? 0] +
-              ((i == middleName[widget.personNumber ?? 0].length - 1)
-                  ? ''
-                  : ' ');
-    }
+    fullName[widget.personNumber!] += middleName[widget.personNumber!];
 
     fullName[widget.personNumber ?? 0] +=
         (lastName[widget.personNumber ?? 0].length != 0) ? ' ' : '';
 
-    for (int i = 0; i < lastName[widget.personNumber ?? 0].length; i++) {
-      fullName[widget.personNumber ?? 0] += lastName[widget.personNumber ?? 0] +
-          ((i == lastName[widget.personNumber ?? 0].length - 1) ? '' : ' ');
-    }
+    fullName[widget.personNumber!] += lastName[widget.personNumber!];
 
     fullName[widget.personNumber ?? 0] +=
         (suffix[widget.personNumber ?? 0].length != 0) ? ' ' : '';
 
-    for (int i = 0; i < suffix[widget.personNumber ?? 0].length; i++) {
-      fullName[widget.personNumber ?? 0] += suffix[widget.personNumber ?? 0] +
-          ((i == suffix[widget.personNumber ?? 0].length - 1) ? '' : ' ');
-    }
+    fullName[widget.personNumber!] += suffix[widget.personNumber!];
 
     fullName[widget.personNumber ?? 0] =
         fullName[widget.personNumber ?? 0].trim();
@@ -732,6 +720,8 @@ class _NameTextFormFieldState extends State<NameTextFormField> {
             ),
             onPressed: () async {
               setState(() {
+                createWeddingItemCount += 4;
+
                 nameExpanded = true;
               });
 
@@ -790,6 +780,8 @@ class _NameTextFormFieldState extends State<NameTextFormField> {
                     ),
                     onPressed: () async {
                       setState(() {
+                        createWeddingItemCount -= 4;
+
                         nameExpanded = false;
                       });
 
@@ -871,73 +863,5 @@ class _NameTextFormFieldState extends State<NameTextFormField> {
   @override
   Widget build(BuildContext context) {
     return (nameExpanded) ? multipleTextFormField() : singleTextFormField();
-  }
-}
-
-class OverflowText extends StatefulWidget {
-  const OverflowText(
-    this.text, {
-    Key? key,
-    this.style,
-    this.maxLines,
-    this.overflow,
-    required this.textField,
-  }) : super(key: key);
-
-  final String text;
-  final int? maxLines;
-  final TextStyle? style;
-  final TextOverflow? overflow;
-  final String textField;
-
-  @override
-  _OverflowTextState createState() => _OverflowTextState();
-}
-
-class _OverflowTextState extends State<OverflowText> {
-  bool? hasTextOverflow(BuildContext context) {
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: widget.text, style: widget.style),
-      maxLines: widget.maxLines,
-      textDirection: TextDirection.ltr,
-    )..layout(
-        minWidth: 0,
-        maxWidth: MediaQuery.of(context).size.width,
-      );
-
-    return textPainter.didExceedMaxLines;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final DefaultTextStyle defaultTextStyle = DefaultTextStyle.of(context);
-
-    return TextButton(
-      onPressed: hasTextOverflow(context)!
-          ? () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text(
-                      widget.textField,
-                    ),
-                    content: SingleChildScrollView(
-                      child: Text(
-                        widget.text,
-                      ),
-                    ),
-                  );
-                },
-              );
-            }
-          : null,
-      child: Text(
-        widget.text,
-        style: widget.style,
-        maxLines: widget.maxLines ?? defaultTextStyle.maxLines,
-        overflow: widget.overflow ?? defaultTextStyle.overflow,
-      ),
-    );
   }
 }

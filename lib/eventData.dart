@@ -18,8 +18,8 @@ final List<String> monthsAbr = [
   "Dec"
 ];
 
-class EventData {
-  List<WeddingEvent>? subEvents;
+class EventData { 
+  List<WeddingEventData>? subEvents;
   List<int>? subEventIDs = [];
   String? eventDescription;
   List<int> personIDs = [];
@@ -36,7 +36,7 @@ class EventData {
     @required int? eventNumber,
     @required String? eventName,
     @required DateTime? eventDateTime,
-    List<WeddingEvent>? subEvents,
+    List<WeddingEventData>? subEvents,
     @required String? eventDescription,
     List<Person>? people,
   }) {
@@ -52,7 +52,7 @@ class EventData {
     this.eventDateTime = dateTime;
   }
 
-  Future<void> addSubEvent(WeddingEvent event) async {
+  Future<void> addSubEvent(WeddingEventData event) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     subEvents!.add(event);
@@ -154,13 +154,13 @@ class EventData {
   }
 }
 
-class WeddingEvent {
+class WeddingEventData {
   String? eventName, eventDescription;
   DateTime? eventDateTime;
   Duration? timeLeft;
   int? eventNumber;
 
-  WeddingEvent({
+  WeddingEventData({
     @required int? eventNumber,
     @required String? eventName,
     @required DateTime? eventDateTime,
@@ -184,7 +184,7 @@ class WeddingEvent {
         'eventDescription': eventDescription,
       };
 
-  factory WeddingEvent.fromMap(Map<String, dynamic> map) => WeddingEvent(
+  factory WeddingEventData.fromMap(Map<String, dynamic> map) => WeddingEventData(
         eventNumber: map['eventNumber'],
         eventName: map['eventName'],
         eventDateTime: DateTime.parse(map['eventDateTime']),

@@ -2,12 +2,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+import 'universals.dart';
 import 'eventData.dart';
 import 'main.dart';
 
-TextEditingController dateTimeController = TextEditingController(text: "");
+TextEditingController _eventDescriptionController = TextEditingController();
+TextEditingController _eventDateTimeController = TextEditingController();
+TextEditingController _eventNameController = TextEditingController();
+
 String? eventNameText, eventName, eventDescriptionText, eventDescription;
 DateTime selectedDate = DateTime.now().add(Duration(hours: 2));
+GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 EventData? currentWeddingData;
 MediaQueryData? deviceInfo;
 
@@ -41,8 +46,8 @@ _readEvents() async {
         if (jsonCurrentEventDataToRead != null) {
           Map<String, dynamic> currentEventDataToRead =
               jsonDecode(jsonCurrentEventDataToRead);
-          WeddingEvent currentEventData =
-              WeddingEvent.fromMap(currentEventDataToRead);
+          WeddingEventData currentEventData =
+              WeddingEventData.fromMap(currentEventDataToRead);
 
           currentWeddingData!.addSubEvent(currentEventData);
         }
@@ -78,7 +83,7 @@ void addToList(String eventName, String eventDescription) {
     eventNumber = currentWeddingData!.subEvents!.last.eventNumber! + 1;
   }
 
-  WeddingEvent currentWeddingEventData = WeddingEvent(
+  WeddingEventData currentWeddingEventData = WeddingEventData(
     eventNumber: eventNumber,
     eventName: eventName,
     eventDateTime: selectedDate,
@@ -134,7 +139,7 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
             changedTimer.minute,
           );
 
-          dateTimeController.text =
+          _eventDateTimeController.text =
               "${(selectedDate.day < 10) ? '0' : ''}${selectedDate.day} ${monthsAbr[selectedDate.month - 1]} ${selectedDate.year} ${(selectedDate.hour == 0) ? 12 : (selectedDate.hour > 12) ? selectedDate.hour - 12 : selectedDate.hour}:${selectedDate.minute} ${(selectedDate.hour == 0) ? 'am' : (selectedDate.hour > 12) ? 'pm' : 'am'}";
         });
       }
@@ -142,6 +147,12 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
   }
 
   Future<void> createEvent(BuildContext context) async {
+    _eventDescriptionController.clear();
+
+    _eventDateTimeController.clear();
+
+    _eventNameController.clear();
+
     return showDialog(
       context: context,
       builder: (context) {
@@ -149,69 +160,96 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text("Create A New Event"),
-          content: Container(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      eventNameText = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    border: new OutlineInputBorder(
-                      borderRadius: const BorderRadius.all(
-                        const Radius.circular(10.0),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    onChanged: (value) {
+                      setState(() {
+                        eventNameText = value;
+                      });
+                    },
+                    controller: _eventNameController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(10.0),
+                        ),
                       ),
+                      hintText: "Event Name",
                     ),
-                    hintText: "Event Name",
+                    validator: (value) {
+                      return (value == null || value.isEmpty)
+                          ? 'Enter a valid event name'
+                          : null;
+                    },
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      eventDescriptionText = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    border: new OutlineInputBorder(
-                      borderRadius: const BorderRadius.all(
-                        const Radius.circular(10.0),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  TextFormField(
+                    onChanged: (value) {
+                      setState(() {
+                        eventDescriptionText = value;
+                      });
+                    },
+                    controller: _eventDescriptionController,
+                    decoration: InputDecoration(
+                      border: new OutlineInputBorder(
+                        borderRadius: const BorderRadius.all(
+                          const Radius.circular(10.0),
+                        ),
                       ),
+                      hintText: "Event Description",
                     ),
-                    hintText: "Event Description",
+                    validator: (value) {
+                      return (value == null || value.isEmpty)
+                          ? 'Enter a valid event description'
+                          : null;
+                    },
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                TextFormField(
-                  textAlign: TextAlign.center,
-                  readOnly: true,
-                  controller: dateTimeController,
-                  decoration: InputDecoration(
-                    border: new OutlineInputBorder(
-                      borderRadius: const BorderRadius.all(
-                        const Radius.circular(10.0),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  TextFormField(
+                    readOnly: true,
+                    controller: _eventDateTimeController,
+                    decoration: InputDecoration(
+                      border: new OutlineInputBorder(
+                        borderRadius: const BorderRadius.all(
+                          const Radius.circular(10.0),
+                        ),
                       ),
+                      hintText: 'Event Time',
                     ),
-                    contentPadding: EdgeInsets.only(top: 0.0),
+                    onTap: () {
+                      buildDateTimePicker(context);
+                    },
+                    validator: (String? value) {
+                      return (value!.isEmpty)
+                          ? 'Enter a valid event date'
+                          : null;
+                    },
                   ),
-                  onTap: () {
-                    buildDateTimePicker(context);
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
             TextButton(
-              child: Text("Cancel"),
+              child: Text(
+                "Cancel",
+              ),
               onPressed: () {
+                _eventDescriptionController.clear();
+
+                _eventDateTimeController.clear();
+
+                _eventNameController.clear();
+
                 Navigator.pop(context);
               },
               style: ButtonStyle(
@@ -225,17 +263,28 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
               ),
             ),
             TextButton(
-              child: Text("Create"),
+              child: Text(
+                "Create",
+              ),
               onPressed: () {
-                setState(() {
-                  eventName = eventNameText;
-                  eventDescription = eventDescriptionText;
-                });
-                Navigator.pop(context);
-                addToList(
-                  eventName ?? "",
-                  eventDescription ?? "",
-                );
+                if (_formKey.currentState!.validate()) {
+                  setState(() {
+                    eventName = _eventNameController.text;
+
+                    eventDescription = _eventDescriptionController.text;
+                  });
+
+                  _eventDescriptionController.clear();
+
+                  _eventNameController.clear();
+
+                  Navigator.pop(context);
+
+                  addToList(
+                    eventName!,
+                    eventDescription!,
+                  );
+                }
               },
               style: ButtonStyle(
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -313,32 +362,15 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
     });
   }
 
-  Color? generateCardColor() {
-    if (weddingAppTheme.themeMode == 0)
-      return Colors.white;
-    else if (weddingAppTheme.themeMode == 1)
-      return Colors.grey[850];
-    else
-      return (deviceInfo!.platformBrightness == Brightness.dark)
-          ? Colors.grey[850]
-          : Colors.white;
-  }
-
-  Color? generateCardShadowColor() {
-    if (weddingAppTheme.themeMode == 0)
-      return Colors.black;
-    else if (weddingAppTheme.themeMode == 1)
-      return Colors.white;
-    else
-      return (deviceInfo!.platformBrightness == Brightness.dark)
-          ? Colors.white
-          : Colors.black;
-  }
-
   @override
   void initState() {
     setState(() {
       currentWeddingData = widget.currentEventDataToSave;
+
+      selectedDate = currentWeddingData!.eventDateTime!;
+
+      _eventDateTimeController.text =
+          "${(selectedDate.day < 10) ? '0' : ''}${selectedDate.day} ${monthsAbr[selectedDate.month - 1]} ${selectedDate.year} ${(selectedDate.hour == 0) ? 12 : (selectedDate.hour > 12) ? selectedDate.hour - 12 : selectedDate.hour}:${selectedDate.minute} ${(selectedDate.hour == 0) ? 'am' : (selectedDate.hour > 12) ? 'pm' : 'am'}";
 
       _readEvents();
     });
@@ -388,91 +420,8 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                     },
                   );
                 },
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Row(
-                      children: [
-                        ClipOval(
-                          child: Container(
-                            color: Colors.blue,
-                            width: 64,
-                            height: 64,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  monthsAbr[currentWeddingData!
-                                          .subEvents![index]
-                                          .eventDateTime!
-                                          .month -
-                                      1],
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  currentWeddingData!
-                                      .subEvents![index].eventDateTime!.day
-                                      .toString(),
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  softWrap: true,
-                                ),
-                                Text(
-                                  currentWeddingData!
-                                      .subEvents![index].eventDateTime!.year
-                                      .toString(),
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              currentWeddingData!.subEvents![index].eventName ??
-                                  "",
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: (deviceInfo!.platformBrightness ==
-                                        Brightness.dark)
-                                    ? Colors.white
-                                    : Colors.black,
-                              ),
-                            ),
-                            Text(
-                              currentWeddingData!
-                                      .subEvents![index].eventDescription ??
-                                  "",
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: (deviceInfo!.platformBrightness ==
-                                        Brightness.dark)
-                                    ? Colors.white
-                                    : Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  color: generateCardColor(),
-                  shadowColor: generateCardShadowColor(),
+                child: WeddingEvent(
+                  weddingEventIndex: index,
                 ),
               );
             },
@@ -489,6 +438,95 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
           await _saveEvents();
         },
       ),
+    );
+  }
+}
+
+class WeddingEvent extends StatefulWidget {
+  const WeddingEvent({Key? key, required this.weddingEventIndex})
+      : super(key: key);
+
+  final int weddingEventIndex;
+
+  @override
+  _WeddingEventState createState() => _WeddingEventState();
+}
+
+class _WeddingEventState extends State<WeddingEvent> {
+  Color? generateCardColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.white;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.grey[850];
+    else
+      return (deviceInfo!.platformBrightness == Brightness.dark)
+          ? Colors.grey[850]
+          : Colors.white;
+  }
+
+  Color? generateCardShadowColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.black;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.white;
+    else
+      return (deviceInfo!.platformBrightness == Brightness.dark)
+          ? Colors.white
+          : Colors.black;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: Row(
+          children: [
+            ClipOval(
+              child: Container(
+                color: Colors.blue,
+                width: 64,
+                height: 64,
+              ),
+            ),
+            SizedBox(
+              width: 10,
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OverflowText(
+                  currentWeddingData!
+                          .subEvents![widget.weddingEventIndex].eventName ??
+                      "",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: (deviceInfo!.platformBrightness == Brightness.dark)
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  textField: "Event Name",
+                ),
+                OverflowText(
+                  currentWeddingData!.subEvents![widget.weddingEventIndex]
+                          .eventDescription ??
+                      "",
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: (deviceInfo!.platformBrightness == Brightness.dark)
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  textField: "Event Description",
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      color: generateCardColor(),
+      shadowColor: generateCardShadowColor(),
     );
   }
 }
