@@ -18,7 +18,7 @@ final List<String> monthsAbr = [
   "Dec"
 ];
 
-class EventData { 
+class EventData {
   List<WeddingEventData>? subEvents;
   List<int>? subEventIDs = [];
   String? eventDescription;
@@ -52,7 +52,7 @@ class EventData {
     this.eventDateTime = dateTime;
   }
 
-  Future<void> addSubEvent(WeddingEventData event) async {
+  Future<void>? addSubEvent(WeddingEventData event) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     subEvents!.add(event);
@@ -64,7 +64,7 @@ class EventData {
         "subEventIDs$eventName$eventNumber", subEventIDs.toString());
   }
 
-  Future<void> addPerson(Person person) async {
+  Future<void>? addPerson(Person person) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     people!.add(person);
@@ -75,7 +75,7 @@ class EventData {
     prefs.setString("personIDs$eventName$eventNumber", personIDs.toString());
   }
 
-  Future<void> removeSubEventByIndex(int index) async {
+  Future<void>? removeSubEventByIndex(int index) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     await prefs.remove(
@@ -93,7 +93,7 @@ class EventData {
     subEvents!.removeAt(index);
   }
 
-  Future<void> removePersonByIndex(int index) async {
+  Future<void>? removePersonByIndex(int index) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     prefs.remove("person${people![index].personID}$eventName$eventNumber");
@@ -109,11 +109,11 @@ class EventData {
     people!.removeAt(index);
   }
 
-  String nextEventDateTime() {
+  String? nextEventDateTime() {
     return "${(eventDateTime!.day < 10) ? '0' : ''}${eventDateTime!.day} ${monthsAbr[eventDateTime!.month - 1]} ${eventDateTime!.year}";
   }
 
-  Future<Map<String, dynamic>> toMap() async {
+  Future<Map<String, dynamic>>? toMap() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     for (int index = 0; index < people!.length; index++) {
@@ -155,7 +155,7 @@ class EventData {
 }
 
 class WeddingEventData {
-  String? eventName, eventDescription;
+  String? eventName, eventDescription, eventInstructions;
   DateTime? eventDateTime;
   Duration? timeLeft;
   int? eventNumber;
@@ -165,30 +165,39 @@ class WeddingEventData {
     @required String? eventName,
     @required DateTime? eventDateTime,
     @required String? eventDescription,
+    String? eventInstructions,
   }) {
     this.eventNumber = eventNumber;
     this.eventName = eventName;
     this.eventDateTime = eventDateTime;
     this.eventDescription = eventDescription;
     this.timeLeft = eventDateTime!.difference(DateTime.now());
+    this.eventInstructions = eventInstructions;
   }
 
-  String calculateTimeLeft() {
+  String? calculateTimeLeft() {
     return timeLeft.toString();
   }
 
-  Map<String, dynamic> toMap() => {
+  String? eventDateTimeString() {
+    return "${(eventDateTime!.day < 10) ? '0' : ''}${eventDateTime!.day} ${monthsAbr[eventDateTime!.month - 1]} ${eventDateTime!.year} ${(eventDateTime!.hour == 0) ? 12 : (eventDateTime!.hour > 12) ? eventDateTime!.hour - 12 : eventDateTime!.hour}:${eventDateTime!.minute}${(eventDateTime!.hour > 12) ? "pm" : "am"}";
+  }
+
+  Map<String, dynamic>? toMap() => {
         'eventNumber': eventNumber,
         'eventName': eventName,
         'eventDateTime': eventDateTime.toString(),
         'eventDescription': eventDescription,
+        'eventInstructions': eventInstructions,
       };
 
-  factory WeddingEventData.fromMap(Map<String, dynamic> map) => WeddingEventData(
+  factory WeddingEventData.fromMap(Map<String, dynamic> map) =>
+      WeddingEventData(
         eventNumber: map['eventNumber'],
         eventName: map['eventName'],
         eventDateTime: DateTime.parse(map['eventDateTime']),
         eventDescription: map['eventDescription'],
+        eventInstructions: map['eventInstructions'],
       );
 }
 
@@ -213,7 +222,7 @@ class Person {
     this.personID = personID;
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic>? toMap() => {
         'prefix': prefix,
         'firstName': firstName,
         'middleName': middleName,

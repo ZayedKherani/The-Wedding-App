@@ -6,13 +6,14 @@ import 'universals.dart';
 import 'eventData.dart';
 import 'main.dart';
 
+TextEditingController _eventInstructionsController = TextEditingController();
 TextEditingController _eventDescriptionController = TextEditingController();
 TextEditingController _eventDateTimeController = TextEditingController();
 TextEditingController _eventNameController = TextEditingController();
 
-String? eventNameText, eventName, eventDescriptionText, eventDescription;
 DateTime selectedDate = DateTime.now().add(Duration(hours: 2));
 GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+String? eventName, eventDescription, eventInstructions;
 EventData? currentWeddingData;
 MediaQueryData? deviceInfo;
 
@@ -61,7 +62,7 @@ _saveEvents() async {
 
   for (int i = 0; i < currentWeddingData!.subEvents!.length; i++) {
     Map<String, dynamic> currentEventDataToSave =
-        currentWeddingData!.subEvents![i].toMap();
+        currentWeddingData!.subEvents![i].toMap()!;
     String jsonCurrentEventDataToSave = jsonEncode(currentEventDataToSave);
 
     prefs.setString(
@@ -74,7 +75,8 @@ _saveEvents() async {
       currentWeddingData!.subEvents!.length);
 }
 
-void addToList(String eventName, String eventDescription) {
+void addToList(
+    String? eventName, String? eventDescription, String? eventInstructions) {
   int eventNumber;
 
   if (currentWeddingData!.subEvents!.isEmpty) {
@@ -88,6 +90,7 @@ void addToList(String eventName, String eventDescription) {
     eventName: eventName,
     eventDateTime: selectedDate,
     eventDescription: eventDescription,
+    eventInstructions: eventInstructions,
   );
 
   currentWeddingData!.addSubEvent(currentWeddingEventData);
@@ -147,6 +150,8 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
   }
 
   Future<void> createEvent(BuildContext context) async {
+    _eventInstructionsController.clear();
+
     _eventDescriptionController.clear();
 
     _eventDateTimeController.clear();
@@ -167,11 +172,6 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    onChanged: (value) {
-                      setState(() {
-                        eventNameText = value;
-                      });
-                    },
                     controller: _eventNameController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
@@ -191,11 +191,6 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                     height: 10,
                   ),
                   TextFormField(
-                    onChanged: (value) {
-                      setState(() {
-                        eventDescriptionText = value;
-                      });
-                    },
                     controller: _eventDescriptionController,
                     decoration: InputDecoration(
                       border: new OutlineInputBorder(
@@ -234,6 +229,20 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                           : null;
                     },
                   ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  TextFormField(
+                    controller: _eventInstructionsController,
+                    decoration: InputDecoration(
+                      border: new OutlineInputBorder(
+                        borderRadius: const BorderRadius.all(
+                          const Radius.circular(10.0),
+                        ),
+                      ),
+                      hintText: "Event Instructions",
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -244,6 +253,8 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                 "Cancel",
               ),
               onPressed: () {
+                _eventInstructionsController.clear();
+
                 _eventDescriptionController.clear();
 
                 _eventDateTimeController.clear();
@@ -272,7 +283,11 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                     eventName = _eventNameController.text;
 
                     eventDescription = _eventDescriptionController.text;
+
+                    eventInstructions = _eventInstructionsController.text;
                   });
+
+                  _eventInstructionsController.clear();
 
                   _eventDescriptionController.clear();
 
@@ -283,6 +298,7 @@ class _MaterialWeddingPageState extends State<MaterialWeddingPage> {
                   addToList(
                     eventName!,
                     eventDescription!,
+                    eventInstructions!,
                   );
                 }
               },
@@ -464,7 +480,7 @@ class _WeddingEventState extends State<WeddingEvent> {
           : Colors.white;
   }
 
-  Color? generateCardShadowColor() {
+  Color? generateTextColor() {
     if (weddingAppTheme.themeMode == 0)
       return Colors.black;
     else if (weddingAppTheme.themeMode == 1)
@@ -477,56 +493,100 @@ class _WeddingEventState extends State<WeddingEvent> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(10),
-        child: Row(
-          children: [
-            ClipOval(
-              child: Container(
-                color: Colors.blue,
-                width: 64,
-                height: 64,
-              ),
-            ),
-            SizedBox(
-              width: 10,
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+    deviceInfo = MediaQuery.of(context);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(15, 7.5, 15, 7.5),
+      child: Card(
+        child: ListTile(
+          title: Padding(
+            padding: EdgeInsets.all(10),
+            child: Row(
               children: [
-                OverflowText(
-                  currentWeddingData!
-                          .subEvents![widget.weddingEventIndex].eventName ??
-                      "",
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: (deviceInfo!.platformBrightness == Brightness.dark)
-                        ? Colors.white
-                        : Colors.black,
+                ClipOval(
+                  child: Container(
+                    color: Colors.blue,
+                    width: 64,
+                    height: 64,
                   ),
-                  textField: "Event Name",
                 ),
-                OverflowText(
-                  currentWeddingData!.subEvents![widget.weddingEventIndex]
-                          .eventDescription ??
-                      "",
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: (deviceInfo!.platformBrightness == Brightness.dark)
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                  textField: "Event Description",
+                SizedBox(
+                  width: 10,
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OverflowText(
+                      currentWeddingData!
+                              .subEvents![widget.weddingEventIndex].eventName ??
+                          "",
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: generateTextColor(),
+                          fontWeight: FontWeight.bold),
+                      textField: "Event Name",
+                    ),
+                    OverflowText(
+                      currentWeddingData!.subEvents![widget.weddingEventIndex]
+                              .eventDescription ??
+                          "",
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: generateTextColor(),
+                      ),
+                      textField: "Event Description",
+                    ),
+                    OverflowText(
+                      currentWeddingData!.subEvents![widget.weddingEventIndex]
+                              .eventDateTimeString() ??
+                          "",
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: generateTextColor(),
+                      ),
+                      textField: "Event Date and Time",
+                    ),
+                    Visibility(
+                      child: OverflowText(
+                        currentWeddingData!.subEvents![widget.weddingEventIndex]
+                                .eventInstructions ??
+                            "",
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: generateTextColor(),
+                        ),
+                        textField: "Event Instructions",
+                      ),
+                      visible: (currentWeddingData!
+                                  .subEvents![widget.weddingEventIndex]
+                                  .eventInstructions !=
+                              "" &&
+                          currentWeddingData!
+                                  .subEvents![widget.weddingEventIndex]
+                                  .eventInstructions !=
+                              null),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
+        ),
+        color: generateCardColor(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            18.0,
+          ),
+          side: BorderSide(
+            color: Colors.grey,
+          ),
         ),
       ),
-      color: generateCardColor(),
-      shadowColor: generateCardShadowColor(),
     );
   }
 }

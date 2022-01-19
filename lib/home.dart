@@ -485,6 +485,17 @@ class _WeddingHomeState extends State<WeddingHome> {
           : Colors.white;
   }
 
+  Color? generateTextColor() {
+    if (weddingAppTheme.themeMode == 0)
+      return Colors.black;
+    else if (weddingAppTheme.themeMode == 1)
+      return Colors.white;
+    else
+      return (deviceInfo!.platformBrightness == Brightness.dark)
+          ? Colors.white
+          : Colors.black;
+  }
+
   @override
   void initState() {
     _readEvents();
@@ -558,7 +569,7 @@ class _WeddingHomeState extends State<WeddingHome> {
                               ),
                             ),
                             Text(
-                              eventData[index].nextEventDateTime(),
+                              eventData[index].nextEventDateTime()!,
                             ),
                             OverflowText(
                               eventData[index].eventDescription!,
@@ -566,7 +577,7 @@ class _WeddingHomeState extends State<WeddingHome> {
                               maxLines: 2,
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.white,
+                                color: generateTextColor(),
                               ),
                               textField: "WeddingDescription",
                             ),

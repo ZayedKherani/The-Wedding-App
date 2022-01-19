@@ -1,0 +1,21 @@
+name: chat_app_server
+description: Chat App Server Testing
+version: 0.0.1
+homepage: null
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  rethink_db_ns:
+  encrypt:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter: null
